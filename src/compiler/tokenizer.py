@@ -1,0 +1,123 @@
+import re
+from dataclasses import dataclass
+from enum import Enum
+
+
+class TokenType(Enum):
+    INT_LITERAL = "int_literal"
+    IDENTIFIER = "identifier"
+    OPERATOR = "operator"
+    PUNCTUATION = "punctuation"
+    OTHER = "other"
+    END = "end"
+
+
+@dataclass
+class SourceLocation:
+    line: int = -1
+    column: int = -1
+    equal_to_all: bool = False
+
+
+@dataclass
+class Token:
+    """Class for a single Token.
+    Contains the text of the token, the type of the token,
+    and the line and column where the token appeared."""
+    text: str
+    type: TokenType
+    source_location: SourceLocation
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Token):
+            return NotImplemented
+        return (self.text == other.text and
+                self.type == other.type and
+                (self.source_location == other.source_location or other.source_location.equal_to_all == True))
+
+    def __str__(self) -> str:
+        return f"Token text={self.text} type={self.type}"
+
+
+def tokenize(source_code: str) -> list[Token]:
+    int_literal_patterns = [
+        re.compile(r"[0-9]+")
+    ]
+
+    identifier_patterns = [
+        re.compile(r"if"),
+        re.compile(r"while"),
+        re.compile(r"[_a-zA-Z][_a-zA-Z0-9]*")
+    ]
+
+    # these are ignored atm
+    other_patterns = [
+        re.compile(r"\s+"),
+        re.compile(r"\n"),
+        re.compile(r"#.*")  # Comments
+    ]
+    # +, -, *, /, %, =, ==, !=, <, <=, >, >=
+    operator_patterns = [
+        re.compile(r"==|!=|<=|>=|\<|\>|\+|\-|\*|\/|\%|\=")
+    ]
+
+    # (, ), {, }, ,, ;
+    punctuation_patterns = [
+        re.compile(r"\(|\)|\{|\}|\,|\;")
+    ]
+
+    def look_for_matches(source_code: str) -> Token | None:
+        for int_literal_pattern in int_literal_patterns:
+            match = re.match(int_literal_pattern, source_code)
+            if match:
+                return Token(match.group(
+                ), TokenType.INT_LITERAL, SourceLocation(line, column))
+        for identifier_pattern in identifier_patterns:
+            match = re.match(identifier_pattern, source_code)
+            if match:
+                return Token(match.group(
+                ), TokenType.IDENTIFIER, SourceLocation(line, column))
+        for operator_pattern in operator_patterns:
+            match = re.match(operator_pattern, source_code)
+            if match:
+                return Token(match.group(
+                ), TokenType.OPERATOR, SourceLocation(line, column))
+        # this is before the punctuation loop because of \n
+        for other_pattern in other_patterns:
+            match = re.match(other_pattern, source_code)
+            if match:
+                return Token(match.group(
+                ), TokenType.OTHER, SourceLocation(line, column))
+        for punctuation_pattern in punctuation_patterns:
+            match = re.match(punctuation_pattern, source_code)
+            if match:
+                return Token(match.group(
+                ), TokenType.PUNCTUATION, SourceLocation(line, column))
+        return None
+
+    line = 1
+    column = 1
+    output = []
+    match_token = look_for_matches(source_code)
+
+    while match_token:
+        if re.match(r"\n", match_token.text):
+            line += 1
+            column = 1
+        else:
+            column += len(match_token.text)
+
+        if not match_token.type == TokenType.OTHER:
+            # Do not add OTHER type tokens to the output
+            output.append(match_token)
+
+        if len(match_token.text) < len(source_code):
+            source_code = source_code[len(match_token.text):]
+            match_token = look_for_matches(source_code)
+        else:
+            break
+
+    return output
+
+
+tokenize("\n{25};")
