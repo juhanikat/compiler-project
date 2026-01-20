@@ -78,6 +78,8 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
     def parse_factor() -> my_ast.Expression:
         if peek().text == '(':
             return parse_parenthesized()
+        if peek().text == "if":
+            return parse_conditional()
 
         if peek().type == TokenType.INT_LITERAL:
             return parse_int_literal()
@@ -85,7 +87,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             return parse_identifier()
         else:
             raise Exception(
-                f'{peek().source_location}: expected an integer literal or an identifier')
+                f'{peek().source_location}: expected an integer literal or an identifier, but got "{peek().text}"')
 
     def parse_parenthesized() -> my_ast.Expression:
         """Called when parse_factor() sees that an opening parenthesis is the next token."""
@@ -93,6 +95,17 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         expr = parse_expression()
         consume(')')
         return expr
+
+    def parse_conditional() -> my_ast.IfThenElse | my_ast.IfThen:
+        consume("if")
+        if_expr = parse_expression()
+        consume("then")
+        then_expr = parse_expression()
+        if peek().text == "else":
+            consume("else")
+            else_expr = parse_expression()
+            return my_ast.IfThenElse(if_expr, then_expr, else_expr)
+        return my_ast.IfThen(if_expr, then_expr)
 
     output = parse_expression()
     if peek().type != TokenType.END:

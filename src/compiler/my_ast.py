@@ -22,3 +22,18 @@ class BinaryOp(Expression):
     left: Expression
     op: str
     right: Expression
+
+
+@dataclass
+class IfThen(Expression):
+    """AST node for an if then conditional structure (without else)"""
+    if_expr: Expression
+    then_expr: Expression
+
+
+@dataclass
+class IfThenElse(Expression):
+    """AST node for an if then else conditional structure"""
+    if_expr: Expression
+    then_expr: Expression
+    else_expr: Expression
