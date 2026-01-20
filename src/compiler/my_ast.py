@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any, Tuple
 
 
 @dataclass
@@ -37,3 +38,11 @@ class IfThenElse(Expression):
     if_expr: Expression
     then_expr: Expression
     else_expr: Expression
+
+
+@dataclass(init=False)
+class Function(Expression):
+    args: Tuple[Literal, ...]
+
+    def __init__(self, *args: Literal) -> None:
+        self.args = args
