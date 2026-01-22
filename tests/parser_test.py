@@ -1,20 +1,26 @@
 import pytest
 
-from compiler.my_ast import BinaryOp, Function, Identifier, Literal
+from compiler.my_ast import (BinaryOp, Function, Identifier, IfThen,
+                             IfThenElse, Literal)
 from compiler.parser import parse
 from compiler.tokenizer import tokenize
 
 
 def test_parser_basics() -> None:
-    parse(tokenize("1 + 2"))
-    parse(tokenize("a + b"))
+    assert parse(tokenize("1 + 2")) == BinaryOp(Literal(1), "+", Literal(2))
+    assert parse(tokenize("a + b")) == BinaryOp(Identifier("a"),
+                                                "+", Identifier("b"))
 
 
 def test_parentheses() -> None:
     assert parse(tokenize("(1 + 2) + 3 * 4")) == BinaryOp(
-        left=BinaryOp(left=Literal(value=1), op='+', right=Literal(value=2)),
-        op='+',
-        right=BinaryOp(left=Literal(value=3), op='*', right=Literal(value=4))
+        BinaryOp(Literal(1),
+                 '+',
+                 Literal(2)),
+        '+',
+        BinaryOp(Literal(3),
+                 '*',
+                 Literal(4))
     )
     parse(tokenize("1 + (2 + 3) * 4"))
 
@@ -31,9 +37,25 @@ def test_garbage_at_end() -> None:
 
 
 def test_if_then_else() -> None:
-    parse(tokenize("if 1 then 2"))
-    parse(tokenize("if 1 then 2 else 3 + 4"))
-    parse(tokenize("if 1 then if 2 then 3 else 4 else 5"))
+    assert parse(tokenize("if 1 then 2")) == IfThen(Literal(1), Literal(2))
+    assert parse(tokenize("if 1 then 2 else 3 + 4")) == IfThenElse(Literal(1),
+                                                                   Literal(2),
+                                                                   BinaryOp(Literal(3),
+                                                                            "+",
+                                                                            Literal(4)))
+    assert parse(tokenize("if 1 then if 2 then 3 else  4 + 5 * 6 else 5")) == \
+        IfThenElse(Literal(1),
+                   IfThenElse(Literal(2),
+                              Literal(3),
+                              BinaryOp(Literal(4),
+                                       "+",
+                                       BinaryOp(Literal(5),
+                                                "*",
+                                                Literal(6)
+                                                )
+                                       )
+                              ),
+                   Literal(5))
     parse(tokenize("if a then 2 else b + 4"))
     with pytest.raises(Exception):
         parse(tokenize("if 1 then 2 else"))
@@ -45,9 +67,18 @@ def test_if_then_else() -> None:
 def test_functions() -> None:
     assert parse(tokenize("f(1, 2)")) == Function("f", Literal(1), Literal(2))
     assert parse(tokenize("g(1 , 2 + 3, 3 * 4)")) == Function("g",
-                                                              Literal(1), BinaryOp(Literal(2), "+", Literal(3)), BinaryOp(Literal(3), "*", Literal(4)))
-    assert parse(tokenize("h(a, b + c)")) == Function("h", Identifier("a"),
-                                                      BinaryOp(Identifier("b"), "+", Identifier("c")))
+                                                              Literal(1),
+                                                              BinaryOp(Literal(2),
+                                                                       "+",
+                                                                       Literal(3)),
+                                                              BinaryOp(Literal(3),
+                                                                       "*",
+                                                                       Literal(4)))
+    assert parse(tokenize("h(a, b + c)")) == Function("h",
+                                                      Identifier("a"),
+                                                      BinaryOp(Identifier("b"),
+                                                               "+",
+                                                               Identifier("c")))
 
 
 """
