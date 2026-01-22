@@ -81,21 +81,40 @@ def test_functions() -> None:
                                                                Identifier("c")))
 
 
-"""
 def test_operator_presedence() -> None:
-    binary_op = parse(tokenize(r"a + b % c"))
-    print(binary_op)
-    assert type(binary_op) == BinaryOp
-    assert binary_op.right == BinaryOp(
-        Identifier('b'), r"%", Identifier("c"))
+    # binary_op = parse(tokenize(r"a + b % c"))
+    # print(binary_op)
+    # assert type(binary_op) == BinaryOp
+    # assert binary_op.right == BinaryOp(
+    # Identifier('b'), r"%", Identifier("c"))
 
-    binary_op = parse(tokenize(r"a * b + c / d"))
-    print(binary_op)
-    assert binary_op == BinaryOp(BinaryOp(Identifier(
-        'a'), r"*", Identifier('b')), r"+", BinaryOp(Identifier('c'), "/", Identifier('d')))
+    assert parse(tokenize(r"a * b + c / d")) == BinaryOp(
+        BinaryOp(Identifier('a'),
+                 r"*",
+                 Identifier('b')),
+        r"+",
+        BinaryOp(Identifier('c'),
+                 "/",
+                 Identifier('d')))
 
-    binary_op = parse(tokenize(r"a + b % c and d"))
-    print(binary_op)
-    assert binary_op == BinaryOp(Identifier('a'), r"+", BinaryOp(
-        Identifier('b'), r"%", BinaryOp(Identifier('c'), "and", Identifier('d'))))
-"""
+    assert parse(tokenize(r"a + b % c and d")) == BinaryOp(
+        BinaryOp(Identifier('a'),
+                 r"+",
+                 BinaryOp(Identifier('b'),
+                          r"%",
+                          Identifier("c"))),
+        "and",
+        Identifier('d'))
+
+    assert parse(tokenize(r"a % if b * c + b then d else e")) == BinaryOp(
+        Identifier("a"),
+        r"%",
+        IfThenElse(BinaryOp(BinaryOp(Identifier("b"),
+                                     "*",
+                                     Identifier("c")),
+                            "+",
+                            Identifier("b")
+                            ),
+                   Identifier("d"),
+                   Identifier("e"))
+    )

@@ -1,5 +1,17 @@
+from typing import List
+
 from compiler import my_ast
-from compiler.tokenizer import SourceLocation, Token, TokenType
+from compiler.tokenizer import Token, TokenType
+
+left_associative_binary_operators: List[List[str]] = [
+    ['='],
+    ['or'],
+    ['and'],
+    ['==', '!='],
+    ['<', '<=', '>', '>='],
+    ['+', '-'],
+    ['*', '/', '%'],
+]
 
 
 def parse(tokens: list[Token]) -> my_ast.Expression | None:
@@ -51,31 +63,38 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         return my_ast.Identifier(token.text)
 
     def parse_expression() -> my_ast.Expression:
-        """Terms (left and right) can be either int literals or * / operators."""
-        left = parse_term()
-        while peek().text in ['+', '-']:
-            operator_token = consume()
-            operator = operator_token.text
-            right = parse_term()
-            left = my_ast.BinaryOp(
-                left,
-                operator,
-                right
-            )
+        """"""
+        level_index = 0
+        left = parse_term(1)
+        for precedence_level in left_associative_binary_operators[level_index:]:
+            while peek().text in precedence_level:
+                operator_token = consume()
+                operator = operator_token.text
+                new_level_index = left_associative_binary_operators.index(
+                    precedence_level)
+                right = parse_term(new_level_index)
+                left = my_ast.BinaryOp(
+                    left,
+                    operator,
+                    right
+                )
         return left
 
-    def parse_term() -> my_ast.Expression:
-        """Factors (left and right) can be either int literals or identifiers."""
+    def parse_term(level_index: int) -> my_ast.Expression:
+        """"""
         left = parse_factor()
-        while peek().text in ['*', '/']:
-            operator_token = consume()
-            operator = operator_token.text
-            right = parse_factor()
-            left = my_ast.BinaryOp(
-                left,
-                operator,
-                right
-            )
+        for precedence_level in left_associative_binary_operators[level_index:]:
+            while peek().text in precedence_level:
+                operator_token = consume()
+                operator = operator_token.text
+                new_level_index = left_associative_binary_operators.index(
+                    precedence_level)
+                right = parse_term(new_level_index)
+                left = my_ast.BinaryOp(
+                    left,
+                    operator,
+                    right
+                )
         return left
 
     def parse_factor() -> my_ast.Expression:
@@ -123,5 +142,5 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
     output = parse_expression()
     if peek().type != TokenType.END:
         raise Exception(
-            f'{peek().source_location}: invalid token')
+            f'{peek().source_location}: invalid token "{peek().text}"')
     return output
