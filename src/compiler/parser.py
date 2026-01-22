@@ -66,7 +66,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
     def parse_expression() -> my_ast.Expression:
         """"""
         level_index = 0
-        left = parse_term(1)
+        left = parse_term(0)
         for precedence_level in left_associative_binary_operators[level_index:]:
             while peek().text in precedence_level:
                 operator_token = consume()

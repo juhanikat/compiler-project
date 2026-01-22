@@ -11,6 +11,8 @@ def test_parser_basics() -> None:
     assert parse(tokenize("1 + 2")) == BinaryOp(Literal(1), "+", Literal(2))
     assert parse(tokenize("a + b")) == BinaryOp(Identifier("a"),
                                                 "+", Identifier("b"))
+    assert parse(tokenize("hapsu + hapsu2")
+                 ) == BinaryOp(Identifier("hapsu"), "+", Identifier("hapsu2"))
 
 
 def test_parentheses() -> None:
@@ -85,6 +87,29 @@ def test_functions() -> None:
 def test_unary_parsing() -> None:
     assert parse(tokenize("-a")) == UnaryOp("-", Identifier("a"))
     assert parse(tokenize("not b")) == UnaryOp("not", Identifier("b"))
+
+
+def test_assignment_operator() -> None:
+    # NOTE: these have to be right-associative!
+    assert parse(tokenize("a = b")) == BinaryOp(
+        Identifier("a"), "=", Identifier("b"))
+    assert parse(tokenize("a = b = c")) == BinaryOp(Identifier("a"),
+                                                    "=",
+                                                    BinaryOp(Identifier("b"),
+                                                             "=",
+                                                             Identifier("c"))
+                                                    )
+
+    assert parse(tokenize("a = b = c + 2")) == \
+        BinaryOp(Identifier("a"),
+                 "=",
+                 BinaryOp(Identifier("b"),
+                          "=",
+                          BinaryOp(Identifier("c"),
+                                   "+",
+                                   Literal(2))
+                          )
+                 )
 
 
 def test_operator_precedence() -> None:
