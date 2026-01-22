@@ -11,6 +11,7 @@ left_associative_binary_operators: List[List[str]] = [
     ['<', '<=', '>', '>='],
     ['+', '-'],
     ['*', '/', '%'],
+    # all identifiers are in this spot
 ]
 
 
@@ -100,8 +101,10 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
     def parse_factor() -> my_ast.Expression:
         if peek().text == '(':
             return parse_parenthesized()
-        if peek().text == "if":
+        elif peek().text == "if":
             return parse_conditional()
+        elif peek().text in ["not", "-"]:
+            return parse_unary()
 
         if peek().type == TokenType.INT_LITERAL:
             return parse_int_literal()
@@ -138,6 +141,18 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             params.append(parse_expression())
         consume(")")
         return my_ast.Function(name, *params)
+
+    def parse_unary() -> my_ast.UnaryOp:
+        if peek().text == "not":
+            consume("not")
+            target = parse_expression()
+            return my_ast.UnaryOp("not", target)
+        elif peek().text == "-":
+            consume("-")
+            target = parse_expression()
+            return my_ast.UnaryOp("-", target)
+        raise Exception(
+            f'{peek().source_location}: expected "not" or "-", but got "{peek().text}"')
 
     output = parse_expression()
     if peek().type != TokenType.END:

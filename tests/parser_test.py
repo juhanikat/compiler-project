@@ -1,12 +1,13 @@
 import pytest
 
 from compiler.my_ast import (BinaryOp, Function, Identifier, IfThen,
-                             IfThenElse, Literal)
+                             IfThenElse, Literal, UnaryOp)
 from compiler.parser import parse
 from compiler.tokenizer import tokenize
 
 
 def test_parser_basics() -> None:
+    assert parse(tokenize("1")) == Literal(1)
     assert parse(tokenize("1 + 2")) == BinaryOp(Literal(1), "+", Literal(2))
     assert parse(tokenize("a + b")) == BinaryOp(Identifier("a"),
                                                 "+", Identifier("b"))
@@ -81,13 +82,12 @@ def test_functions() -> None:
                                                                Identifier("c")))
 
 
-def test_operator_presedence() -> None:
-    # binary_op = parse(tokenize(r"a + b % c"))
-    # print(binary_op)
-    # assert type(binary_op) == BinaryOp
-    # assert binary_op.right == BinaryOp(
-    # Identifier('b'), r"%", Identifier("c"))
+def test_unary_parsing() -> None:
+    assert parse(tokenize("-a")) == UnaryOp("-", Identifier("a"))
+    assert parse(tokenize("not b")) == UnaryOp("not", Identifier("b"))
 
+
+def test_operator_precedence() -> None:
     assert parse(tokenize(r"a * b + c / d")) == BinaryOp(
         BinaryOp(Identifier('a'),
                  r"*",

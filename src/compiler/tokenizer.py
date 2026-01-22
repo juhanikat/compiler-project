@@ -45,9 +45,7 @@ def tokenize(source_code: str) -> list[Token]:
     ]
 
     identifier_patterns = [
-        re.compile(r"if"),
-        re.compile(r"while"),
-        re.compile(r"[_a-zA-Z][_a-zA-Z0-9]*")
+        re.compile(r"[_a-zA-Z][_a-zA-Z0-9]*")  # also includes if, while etc.
     ]
 
     # these are ignored atm
