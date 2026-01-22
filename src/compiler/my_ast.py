@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Tuple
+from typing import Tuple
 
 
 @dataclass
@@ -26,6 +26,13 @@ class BinaryOp(Expression):
 
 
 @dataclass
+class UnaryOp(Expression):
+    """AST node for an unary operation like `not A`"""
+    op: str
+    target: Expression
+
+
+@dataclass
 class IfThen(Expression):
     """AST node for an if then conditional structure (without else)"""
     if_expr: Expression
@@ -42,7 +49,9 @@ class IfThenElse(Expression):
 
 @dataclass(init=False)
 class Function(Expression):
-    args: Tuple[Literal, ...]
+    name: str
+    args: Tuple[Expression, ...]
 
-    def __init__(self, *args: Literal) -> None:
+    def __init__(self, name: str, *args: Expression) -> None:
+        self.name = name
         self.args = args

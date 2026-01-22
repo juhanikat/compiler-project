@@ -40,11 +40,14 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         token = consume()
         return my_ast.Literal(int(token.text))
 
-    def parse_identifier() -> my_ast.Identifier:
+    def parse_identifier() -> my_ast.Identifier | my_ast.Function:
         if peek().type != TokenType.IDENTIFIER:
             raise Exception(
                 f'{peek().source_location}: expected an identifier')
         token = consume()
+        # check if this is the start of a function
+        if peek().text == "(":
+            return parse_function(token.text)
         return my_ast.Identifier(token.text)
 
     def parse_expression() -> my_ast.Expression:
@@ -106,6 +109,16 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             else_expr = parse_expression()
             return my_ast.IfThenElse(if_expr, then_expr, else_expr)
         return my_ast.IfThen(if_expr, then_expr)
+
+    def parse_function(name: str) -> my_ast.Function:
+        consume("(")
+        params = []
+        params.append(parse_expression())
+        while peek().text == ",":
+            consume(",")
+            params.append(parse_expression())
+        consume(")")
+        return my_ast.Function(name, *params)
 
     output = parse_expression()
     if peek().type != TokenType.END:
