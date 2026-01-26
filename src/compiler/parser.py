@@ -101,6 +101,8 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
     def parse_factor() -> my_ast.Expression:
         if peek().text == '(':
             return parse_parenthesized()
+        elif peek().text == "{":
+            return parse_block()
         elif peek().text == "if":
             return parse_conditional()
         elif peek().text in ["not", "-"]:
@@ -120,6 +122,21 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         expr = parse_expression()
         consume(')')
         return expr
+
+    def parse_block() -> my_ast.Block:
+        consume("{")
+        expressions = []
+        result_expr: my_ast.Expression | my_ast.Literal = my_ast.Literal(None)
+        while peek().text != "}":
+            expressions.append(parse_expression())
+            if peek().text != ";":
+                # this is the last expression inside the block
+                result_expr = expressions[-1]
+                break
+            consume(";")
+
+        consume("}")
+        return my_ast.Block(*expressions, result_expr=result_expr)
 
     def parse_conditional() -> my_ast.IfThenElse | my_ast.IfThen:
         consume("if")

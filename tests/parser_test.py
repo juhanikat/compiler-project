@@ -1,7 +1,7 @@
 import pytest
 
-from compiler.my_ast import (BinaryOp, Function, Identifier, IfThen,
-                             IfThenElse, Literal, UnaryOp)
+from compiler.my_ast import (BinaryOp, Block, Function, Identifier, IfThen,
+                             IfThenElse, Literal, Punctuation, UnaryOp)
 from compiler.parser import parse
 from compiler.tokenizer import tokenize
 
@@ -76,8 +76,11 @@ def test_if_then_else() -> None:
 
     with pytest.raises(Exception):
         parse(tokenize("if 1 then 2 else"))
+    with pytest.raises(Exception):
         parse(tokenize("if 1 else 2"))
+    with pytest.raises(Exception):
         parse(tokenize("if 1"))
+    with pytest.raises(Exception):
         parse(tokenize("if 1 then if 2 else 3"))
 
 
@@ -157,3 +160,45 @@ def test_operator_precedence() -> None:
                    Identifier("d"),
                    Identifier("e"))
     )
+
+
+def test_blocks() -> None:
+    assert parse(tokenize("{ x = 10 }")) == Block(
+        BinaryOp(Identifier("x"),
+                 "=",
+                 Literal(10)), result_expr=BinaryOp(Identifier("x"),
+                                                    "=",
+                                                    Literal(10)),
+    )
+
+    block2 = parse(tokenize("{ x = 10;"
+                            "True }"))
+    assert isinstance(block2, Block)
+    assert block2 == \
+        Block(BinaryOp(Identifier("x"),
+                       "=",
+                       Literal(10)),
+              Identifier("True"), result_expr=Identifier("True")
+              )
+
+    assert parse(tokenize("{ a; }")) == Block(
+        Identifier("a"), result_expr=Literal(None))
+
+    assert parse(tokenize("x = { f(a); b }")) == \
+        BinaryOp(Identifier("x"),
+                 "=",
+                 Block(Function("f",
+                                Identifier("a")),
+                       Identifier("b"),
+                       result_expr=Identifier("b")
+                       )
+                 )
+
+    assert parse(tokenize("{ { } }")) == Block(Block(result_expr=Literal(None)),
+                                               result_expr=Block(result_expr=Literal(None)))
+
+    with pytest.raises(Exception):
+        parse(tokenize("{ 1 + 2"
+                       "abc }"))
+    with pytest.raises(Exception):
+        parse(tokenize("{ 1 + 2 + { abc }; "))

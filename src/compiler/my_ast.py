@@ -9,11 +9,16 @@ class Expression:
 
 @dataclass
 class Literal(Expression):
-    value: int | bool
+    value: int | bool | None
 
 
 @dataclass
 class Identifier(Expression):
+    name: str
+
+
+@dataclass
+class Punctuation(Expression):
     name: str
 
 
@@ -55,3 +60,13 @@ class Function(Expression):
     def __init__(self, name: str, *args: Expression) -> None:
         self.name = name
         self.args = args
+
+
+@dataclass(init=False)
+class Block(Expression):
+    expressions: Tuple[Expression, ...]
+    result_expr: Expression
+
+    def __init__(self, *expressions: Expression, result_expr: Expression) -> None:
+        self.expressions = expressions
+        self.result_expr = result_expr
