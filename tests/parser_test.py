@@ -25,7 +25,14 @@ def test_parentheses() -> None:
                  '*',
                  Literal(4))
     )
-    parse(tokenize("1 + (2 + 3) * 4"))
+    assert parse(tokenize("1 + (2 + 3) * 4")) == \
+        BinaryOp(Literal(1),
+                 '+',
+                 BinaryOp(BinaryOp(Literal(2),
+                                   "+",
+                                   Literal(3)),
+                          "*",
+                          Literal(4)))
 
 
 def test_empty_input() -> None:
@@ -59,7 +66,14 @@ def test_if_then_else() -> None:
                                        )
                               ),
                    Literal(5))
-    parse(tokenize("if a then 2 else b + 4"))
+
+    assert parse(tokenize("if a then 2 else b + 4")) == \
+        IfThenElse(Identifier("a"),
+                   Literal(2),
+                   BinaryOp(Identifier("b"),
+                            "+",
+                            Literal(4)))
+
     with pytest.raises(Exception):
         parse(tokenize("if 1 then 2 else"))
         parse(tokenize("if 1 else 2"))
