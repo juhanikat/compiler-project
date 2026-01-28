@@ -21,6 +21,8 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         return None
 
     pos = 0
+    # saves the last consumed Token, used when parsing blocks and semicolons
+    last_consumed: Token | None = None
 
     def peek() -> Token:
         """Returns the next Token on the token list, or the last Token on the list with type=END if there are no more tokens."""
@@ -36,6 +38,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
     def consume(expected: str | list[str] | None = None) -> Token:
         """Same as peek(), but also moves to the next Token on the list (= increases pos by 1)."""
         nonlocal pos
+        nonlocal last_consumed
         token = peek()
         if isinstance(expected, str) and token.text != expected:
             raise Exception(f'{token.source_location}: expected "{expected}"')
@@ -44,6 +47,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             raise Exception(
                 f'{token.source_location}: expected one of: {comma_separated}')
         pos += 1
+        last_consumed = token
         return token
 
     def parse_int_literal() -> my_ast.Literal:
@@ -135,9 +139,9 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             expressions.append(expression)
 
             if peek().text != ";":
-                if peek().text != "}":
-                    # doesnt work since e.g. { 1 + 2 abc } fits here, which is invalid
-                    pass
+                if (last_consumed and last_consumed.text == "}") and peek().text != "}":
+                    # NOTE: might cause issues later??
+                    continue
 
                 # this is the last expression inside the block
                 result_expr = expressions[-1]

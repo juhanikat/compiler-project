@@ -225,7 +225,6 @@ def test_variable_declaration() -> None:
 
 
 def test_advanced_blocks() -> None:
-    """
     assert parse(tokenize("{ { a } }")) == \
         Block(Block(Identifier("a"),
                     result_expr=Identifier("a")),
@@ -239,15 +238,17 @@ def test_advanced_blocks() -> None:
                     result_expr=Identifier("b")),
               result_expr=Block(Identifier("b"),
                                 result_expr=Identifier("b")))
-                                """
 
-    # TODO: this does not work yet!! print(parse(tokenize("{ if true then { a } b }")))
+    print(parse(tokenize("{ if true then { a } b }")))
 
     print(parse(tokenize("{ if true then { a }; b }")))
 
     with pytest.raises(Exception):
-        print(parse(tokenize("{ if true then { a } b c }")))
-        
-    # TODO: this does not work yet!! print(parse(tokenize("{ if true then { a } b; c }")))
-    # TODO: this does not work yet!! print(parse(tokenize("{ if true then { a } else { b } c }")))
-    # TODO: this does not work yet!! print(parse(tokenize("x = { { f(a) } { b } }")))
+        parse(tokenize("{ a b }"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("{ if true then { a } b c }"))
+
+    print(parse(tokenize("{ if true then { a } b; c }")))
+    print(parse(tokenize("{ if true then { a } else { b } c }")))
+    print(parse(tokenize("x = { { f(a) } { b } }")))
