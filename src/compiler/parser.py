@@ -129,23 +129,24 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         consume("{")
         expressions = []
         result_expr: my_ast.Expression | my_ast.Literal = my_ast.Literal(None)
+
         while peek().text != "}":
             expression = parse_expression(True)
             expressions.append(expression)
 
-            if isinstance(expression, my_ast.Block) and peek().text != "}":
-                # if the expression was a block, then it doesn't need a semicolon after it, unless it was the last expression
-                print("NEXTTTT")
-                print(peek().text)
-                continue
-
             if peek().text != ";":
+                if peek().text != "}":
+                    # doesnt work since e.g. { 1 + 2 abc } fits here, which is invalid
+                    pass
+
                 # this is the last expression inside the block
                 result_expr = expressions[-1]
                 break
             consume(";")
 
         consume("}")
+        print(my_ast.Block(*expressions, result_expr=result_expr))
+        # if the result_expr was not found inside the loop, is is set to Literal(None)
         return my_ast.Block(*expressions, result_expr=result_expr)
 
     def parse_conditional() -> my_ast.IfThenElse | my_ast.IfThen:
