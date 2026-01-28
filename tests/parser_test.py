@@ -222,3 +222,20 @@ def test_variable_declaration() -> None:
         parse(tokenize("var x = var y"))
     with pytest.raises(Exception):
         parse(tokenize("if True then var x = 1 else var y = 2"))
+
+
+def test_advanced_blocks() -> None:
+    assert parse(tokenize("{ { a } }")) == \
+        Block(Block(Identifier("a"),
+                    result_expr=Identifier("a")),
+              result_expr=Block(Identifier("a"),
+                                result_expr=Identifier("a")))
+
+    assert parse(tokenize("{ { a } { b } }")) == \
+        Block(Block(Identifier("a"),
+                    result_expr=Identifier("a")),
+              Block(Identifier("b"),
+                    result_expr=Identifier("b")),
+              result_expr=Block(Identifier("b"),
+                                result_expr=Identifier("b")))
+    print(parse(tokenize("{ if true then { a } b }")))
