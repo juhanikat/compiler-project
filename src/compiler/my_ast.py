@@ -23,6 +23,12 @@ class Punctuation(Expression):
 
 
 @dataclass
+class Variable(Expression):
+    name: str
+    value:  Expression
+
+
+@dataclass
 class BinaryOp(Expression):
     """AST node for a binary operation like `A + B`"""
     left: Expression

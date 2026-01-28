@@ -1,7 +1,8 @@
 import pytest
 
 from compiler.my_ast import (BinaryOp, Block, Function, Identifier, IfThen,
-                             IfThenElse, Literal, Punctuation, UnaryOp)
+                             IfThenElse, Literal, Punctuation, UnaryOp,
+                             Variable)
 from compiler.parser import parse
 from compiler.tokenizer import tokenize
 
@@ -202,3 +203,22 @@ def test_blocks() -> None:
                        "abc }"))
     with pytest.raises(Exception):
         parse(tokenize("{ 1 + 2 + { abc }; "))
+
+
+def test_variable_declaration() -> None:
+    # these should only work directly, in top-level and in blocks, not in e.g. "if True then var x = 1"
+    assert parse(tokenize("var x = 1")) == Variable("x", Literal(1))
+    assert parse(tokenize("var x = 3 * 4")) == Variable("x",
+                                                        BinaryOp(Literal(3), "*", Literal(4)))
+    assert parse(tokenize("var x = { var y = 1; y }")) == \
+        Variable("x",
+                 Block(Variable("y",
+                                Literal(1)),
+                       Identifier(
+                     "y"),
+                     result_expr=Identifier("y")))
+
+    with pytest.raises(Exception):
+        parse(tokenize("var x = var y"))
+    with pytest.raises(Exception):
+        parse(tokenize("if True then var x = 1 else var y = 2"))

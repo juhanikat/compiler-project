@@ -63,10 +63,10 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             return parse_function(token.text)
         return my_ast.Identifier(token.text)
 
-    def parse_expression() -> my_ast.Expression:
+    def parse_expression(allow_vars: bool = False) -> my_ast.Expression:
         """"""
         level_index = 0
-        left = parse_term(0)
+        left = parse_term(0, allow_vars)
         for precedence_level in left_associative_binary_operators[level_index:]:
             while peek().text in precedence_level:
                 operator_token = consume()
@@ -81,9 +81,9 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
                 )
         return left
 
-    def parse_term(level_index: int) -> my_ast.Expression:
+    def parse_term(level_index: int, allow_vars: bool = False) -> my_ast.Expression:
         """"""
-        left = parse_factor()
+        left = parse_factor(allow_vars)
         for precedence_level in left_associative_binary_operators[level_index:]:
             while peek().text in precedence_level:
                 operator_token = consume()
@@ -98,7 +98,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
                 )
         return left
 
-    def parse_factor() -> my_ast.Expression:
+    def parse_factor(allow_vars: bool = False) -> my_ast.Expression:
         if peek().text == '(':
             return parse_parenthesized()
         elif peek().text == "{":
@@ -107,6 +107,8 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             return parse_conditional()
         elif peek().text in ["not", "-"]:
             return parse_unary()
+        elif allow_vars and peek().text == "var":
+            return parse_variable_declaration()
 
         if peek().type == TokenType.INT_LITERAL:
             return parse_int_literal()
@@ -128,7 +130,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         expressions = []
         result_expr: my_ast.Expression | my_ast.Literal = my_ast.Literal(None)
         while peek().text != "}":
-            expressions.append(parse_expression())
+            expressions.append(parse_expression(True))
             if peek().text != ";":
                 # this is the last expression inside the block
                 result_expr = expressions[-1]
@@ -171,7 +173,23 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         raise Exception(
             f'{peek().source_location}: expected "not" or "-", but got "{peek().text}"')
 
-    output = parse_expression()
+    def parse_variable_declaration() -> my_ast.Variable:
+        consume("var")
+        if peek().type == TokenType.IDENTIFIER:
+            name = parse_identifier()
+            if isinstance(name, my_ast.Function):
+                raise Exception(
+                    "f'{peek().source_location}: got function when identifier was required")
+        else:
+            raise Exception(
+                f'{peek().source_location}: expected the name of the variable, but got "{peek().text}"')
+
+        consume("=")
+        value = parse_expression()
+
+        return my_ast.Variable(name.name, value)
+
+    output = parse_expression(True)
     if peek().type != TokenType.END:
         raise Exception(
             f'{peek().source_location}: invalid token "{peek().text}"')
