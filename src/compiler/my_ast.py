@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 from typing import Tuple
 
+from compiler.tokenizer import SourceLocation
+
 
 @dataclass
 class Expression:
     """Base class for AST nodes representing expressions."""
+    source_loc: SourceLocation
 
 
 @dataclass

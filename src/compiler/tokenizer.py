@@ -26,14 +26,14 @@ class Token:
     and the line and column where the token appeared."""
     text: str
     type: TokenType
-    source_location: SourceLocation
+    source_loc: SourceLocation
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Token):
             return NotImplemented
         return (self.text == other.text and
                 self.type == other.type and
-                (self.source_location == other.source_location or other.source_location.equal_to_all == True))
+                (self.source_loc == other.source_loc or other.source_loc.equal_to_all == True))
 
     def __str__(self) -> str:
         return f"Token text={self.text} type={self.type}"

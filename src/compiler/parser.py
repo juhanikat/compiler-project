@@ -30,7 +30,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             return tokens[pos]
         else:
             return Token(
-                source_location=tokens[-1].source_location,
+                source_loc=tokens[-1].source_loc,
                 type=TokenType.END,
                 text="",
             )
@@ -41,11 +41,11 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         nonlocal last_consumed
         token = peek()
         if isinstance(expected, str) and token.text != expected:
-            raise Exception(f'{token.source_location}: expected "{expected}"')
+            raise Exception(f'{token.source_loc}: expected "{expected}"')
         if isinstance(expected, list) and token.text not in expected:
             comma_separated = ", ".join([f'"{e}"' for e in expected])
             raise Exception(
-                f'{token.source_location}: expected one of: {comma_separated}')
+                f'{token.source_loc}: expected one of: {comma_separated}')
         pos += 1
         last_consumed = token
         return token
@@ -53,19 +53,19 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
     def parse_int_literal() -> my_ast.Literal:
         if peek().type != TokenType.INT_LITERAL:
             raise Exception(
-                f'{peek().source_location}: expected an integer literal')
+                f'{peek().source_loc}: expected an integer literal')
         token = consume()
-        return my_ast.Literal(int(token.text))
+        return my_ast.Literal(token.source_loc, int(token.text))
 
     def parse_identifier() -> my_ast.Identifier | my_ast.Function:
         if peek().type != TokenType.IDENTIFIER:
             raise Exception(
-                f'{peek().source_location}: expected an identifier')
+                f'{peek().source_loc}: expected an identifier')
         token = consume()
         # check if this is the start of a function
         if peek().text == "(":
             return parse_function(token.text)
-        return my_ast.Identifier(token.text)
+        return my_ast.Identifier(token.source_loc, token.text)
 
     def parse_expression(allow_vars: bool = False) -> my_ast.Expression:
         """"""
@@ -78,11 +78,11 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
                 new_level_index = left_associative_binary_operators.index(
                     precedence_level)
                 right = parse_term(new_level_index)
-                left = my_ast.BinaryOp(
-                    left,
-                    operator,
-                    right
-                )
+                left = my_ast.BinaryOp(left.source_loc,
+                                       left,
+                                       operator,
+                                       right
+                                       )
         return left
 
     def parse_term(level_index: int, allow_vars: bool = False) -> my_ast.Expression:
@@ -95,11 +95,11 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
                 new_level_index = left_associative_binary_operators.index(
                     precedence_level)
                 right = parse_term(new_level_index)
-                left = my_ast.BinaryOp(
-                    left,
-                    operator,
-                    right
-                )
+                left = my_ast.BinaryOp(left.source_loc,
+                                       left,
+                                       operator,
+                                       right
+                                       )
         return left
 
     def parse_factor(allow_vars: bool = False) -> my_ast.Expression:
@@ -120,7 +120,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             return parse_identifier()
         else:
             raise Exception(
-                f'{peek().source_location}: expected an integer literal or an identifier, but got "{peek().text}"')
+                f'{peek().source_loc}: expected an integer literal or an identifier, but got "{peek().text}"')
 
     def parse_parenthesized() -> my_ast.Expression:
         """Called when parse_factor() sees that an opening parenthesis is the next token."""
@@ -161,7 +161,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             consume("else")
             else_expr = parse_expression()
             return my_ast.IfThenElse(if_expr, then_expr, else_expr)
-        return my_ast.IfThen(if_expr, then_expr)
+        return my_ast.IfThen(if_expr.source_loc, if_expr, then_expr)
 
     def parse_function(name: str) -> my_ast.Function:
         consume("(")
@@ -175,34 +175,34 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
 
     def parse_unary() -> my_ast.UnaryOp:
         if peek().text == "not":
-            consume("not")
+            not_token = consume("not")
             target = parse_expression()
-            return my_ast.UnaryOp("not", target)
+            return my_ast.UnaryOp(not_token.source_loc, "not", target)
         elif peek().text == "-":
-            consume("-")
+            minus_token = consume("-")
             target = parse_expression()
-            return my_ast.UnaryOp("-", target)
+            return my_ast.UnaryOp(minus_token.source_loc, "-", target)
         raise Exception(
-            f'{peek().source_location}: expected "not" or "-", but got "{peek().text}"')
+            f'{peek().source_loc}: expected "not" or "-", but got "{peek().text}"')
 
     def parse_variable_declaration() -> my_ast.Variable:
-        consume("var")
+        var_token = consume("var")
         if peek().type == TokenType.IDENTIFIER:
             name = parse_identifier()
             if isinstance(name, my_ast.Function):
                 raise Exception(
-                    "f'{peek().source_location}: got function when identifier was required")
+                    "f'{peek().source_loc}: got function when identifier was required")
         else:
             raise Exception(
-                f'{peek().source_location}: expected the name of the variable, but got "{peek().text}"')
+                f'{peek().source_loc}: expected the name of the variable, but got "{peek().text}"')
 
         consume("=")
         value = parse_expression()
 
-        return my_ast.Variable(name.name, value)
+        return my_ast.Variable(var_token.source_loc, name.name, value)
 
     output = parse_expression(True)
     if peek().type != TokenType.END:
         raise Exception(
-            f'{peek().source_location}: invalid token "{peek().text}"')
+            f'{peek().source_loc}: invalid token "{peek().text}"')
     return output
