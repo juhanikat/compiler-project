@@ -4,7 +4,7 @@ from compiler.my_ast import (BinaryOp, Block, Function, Identifier, IfThen,
                              IfThenElse, Literal, Punctuation, UnaryOp,
                              Variable)
 from compiler.parser import parse
-from compiler.tokenizer import tokenize
+from compiler.tokenizer import SourceLocation, tokenize
 
 
 def test_parser_basics() -> None:

@@ -16,7 +16,7 @@ class TokenType(Enum):
 class SourceLocation:
     line: int = -1
     column: int = -1
-    equal_to_all: bool = False
+    any: bool = False # if this is True, location is excluded when checking for equality of tokens / ast nodes
 
 
 @dataclass
@@ -33,7 +33,7 @@ class Token:
             return NotImplemented
         return (self.text == other.text and
                 self.type == other.type and
-                (self.source_loc == other.source_loc or other.source_loc.equal_to_all == True))
+                (self.source_loc == other.source_loc or other.source_loc.any == True))
 
     def __str__(self) -> str:
         return f"Token text={self.text} type={self.type}"

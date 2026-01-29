@@ -1,7 +1,7 @@
 from typing import List
 
 from compiler import my_ast
-from compiler.tokenizer import Token, TokenType
+from compiler.tokenizer import SourceLocation, Token, TokenType
 
 left_associative_binary_operators: List[List[str]] = [
     ['='],
@@ -132,7 +132,8 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
     def parse_block() -> my_ast.Block:
         consume("{")
         expressions = []
-        result_expr: my_ast.Expression | my_ast.Literal = my_ast.Literal(None)
+        result_expr: my_ast.Expression | my_ast.Literal = my_ast.Literal(
+            SourceLocation(any=True), None)
 
         while peek().text != "}":
             expression = parse_expression(True)
@@ -160,7 +161,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         if peek().text == "else":
             consume("else")
             else_expr = parse_expression()
-            return my_ast.IfThenElse(if_expr, then_expr, else_expr)
+            return my_ast.IfThenElse(if_expr.source_loc, if_expr, then_expr, else_expr)
         return my_ast.IfThen(if_expr.source_loc, if_expr, then_expr)
 
     def parse_function(name: str) -> my_ast.Function:
