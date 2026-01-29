@@ -239,9 +239,19 @@ def test_advanced_blocks() -> None:
               result_expr=Block(Identifier("b"),
                                 result_expr=Identifier("b")))
 
-    print(parse(tokenize("{ if true then { a } b }")))
+    assert parse(tokenize("{ if true then { a } b }")) == \
+        Block(IfThen(Identifier("true"),
+                     Block(Identifier("a"),
+              result_expr=Identifier("a"))),
+              Identifier("b"),
+              result_expr=Identifier("b"))
 
-    print(parse(tokenize("{ if true then { a }; b }")))
+    assert parse(tokenize("{ if true then { a }; b }")) == \
+        Block(IfThen(Identifier("true"),
+                     Block(Identifier("a"),
+              result_expr=Identifier("a"))),
+              Identifier("b"),
+              result_expr=Identifier("b"))
 
     with pytest.raises(Exception):
         parse(tokenize("{ a b }"))
@@ -249,6 +259,32 @@ def test_advanced_blocks() -> None:
     with pytest.raises(Exception):
         parse(tokenize("{ if true then { a } b c }"))
 
-    print(parse(tokenize("{ if true then { a } b; c }")))
-    print(parse(tokenize("{ if true then { a } else { b } c }")))
-    print(parse(tokenize("x = { { f(a) } { b } }")))
+    assert parse(tokenize("{ if true then { a } b; c }")) == \
+        Block(IfThen(Identifier("true"),
+                     Block(Identifier("a"),
+                           result_expr=Identifier("a"))),
+              Identifier("b"),
+              Identifier("c"),
+              result_expr=Identifier("c"))
+
+    assert parse(tokenize("{ if true then { a } else { b } c }")) == \
+        Block(IfThenElse(Identifier("true"),
+                         Block(Identifier("a"),
+                               result_expr=Identifier("a")),
+                         Block(Identifier("b"),
+                               result_expr=Identifier("b"))),
+              Identifier("c"),
+              result_expr=Identifier("c"))
+
+    assert parse(tokenize("x = { { f(a) } { b } }")) == \
+        BinaryOp(Identifier("x"),
+                 "=",
+                 Block(Block(Function("f",
+                                      Identifier("a")),
+                       result_expr=Function("f",
+                                            Identifier("a"))),
+                       Block(Identifier("b"),
+                             result_expr=Identifier("b")),
+                       result_expr=Block(Identifier("b"),
+                                         result_expr=Identifier("b"))),
+                 )

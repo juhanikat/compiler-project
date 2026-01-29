@@ -149,7 +149,6 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             consume(";")
 
         consume("}")
-        print(my_ast.Block(*expressions, result_expr=result_expr))
         # if the result_expr was not found inside the loop, is is set to Literal(None)
         return my_ast.Block(*expressions, result_expr=result_expr)
 
