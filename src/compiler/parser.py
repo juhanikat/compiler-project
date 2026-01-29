@@ -207,3 +207,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         raise Exception(
             f'{peek().source_loc}: invalid token "{peek().text}"')
     return output
+
+
+print(my_ast.Literal(SourceLocation(any=True), 1) ==
+      my_ast.Literal(SourceLocation(0, 0), 1))
