@@ -55,7 +55,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             raise Exception(
                 f'{peek().source_loc}: expected an integer literal')
         token = consume()
-        return my_ast.Literal(token.source_loc, int(token.text))
+        return my_ast.Literal(int(token.text), source_loc=token.source_loc)
 
     def parse_identifier() -> my_ast.Identifier | my_ast.Function:
         if peek().type != TokenType.IDENTIFIER:
@@ -65,7 +65,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         # check if this is the start of a function
         if peek().text == "(":
             return parse_function(token.text)
-        return my_ast.Identifier(token.source_loc, token.text)
+        return my_ast.Identifier(token.text)
 
     def parse_expression(allow_vars: bool = False) -> my_ast.Expression:
         """"""
@@ -133,7 +133,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         consume("{")
         expressions = []
         result_expr: my_ast.Expression | my_ast.Literal = my_ast.Literal(
-            SourceLocation(any=True), None)
+            None)
 
         while peek().text != "}":
             expression = parse_expression(True)
@@ -207,7 +207,3 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         raise Exception(
             f'{peek().source_loc}: invalid token "{peek().text}"')
     return output
-
-
-print(my_ast.Literal(SourceLocation(any=True), 1) ==
-      my_ast.Literal(SourceLocation(0, 0), 1))
