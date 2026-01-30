@@ -50,23 +50,6 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         last_consumed = token
         return token
 
-    def parse_int_literal() -> my_ast.Literal:
-        if peek().type != TokenType.INT_LITERAL:
-            raise Exception(
-                f'{peek().source_loc}: expected an integer literal')
-        token = consume()
-        return my_ast.Literal(int(token.text), source_loc=token.source_loc)
-
-    def parse_identifier() -> my_ast.Identifier | my_ast.Function:
-        if peek().type != TokenType.IDENTIFIER:
-            raise Exception(
-                f'{peek().source_loc}: expected an identifier')
-        token = consume()
-        # check if this is the start of a function
-        if peek().text == "(":
-            return parse_function(token.text)
-        return my_ast.Identifier(token.text, source_loc=token.source_loc)
-
     def parse_expression(allow_vars: bool = False) -> my_ast.Expression:
         level_index = 0
         left = parse_term(0, allow_vars)
@@ -111,11 +94,16 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             return parse_conditional()
         elif peek().text in ["not", "-"]:
             return parse_unary()
+
+        elif peek().text == "while":
+            return parse_while_do()
         elif allow_vars and peek().text == "var":
             return parse_variable_declaration()
 
         if peek().type == TokenType.INT_LITERAL:
             return parse_int_literal()
+        elif peek().text in ["true", "false"]:
+            return parse_boolean()
         elif peek().type == TokenType.IDENTIFIER:
             return parse_identifier()
         else:
@@ -216,9 +204,41 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
 
         consume("=")
         value = parse_expression()
-
         return my_ast.Variable(name.name, value, source_loc=var_token.source_loc)
 
-    output = parse_top_level()
+    def parse_while_do() -> my_ast.WhileDo:
+        while_token = consume("while")
+        condition = parse_expression()
+        consume("do")
+        do_expr = parse_expression()
+        return my_ast.WhileDo(condition, do_expr, source_loc=while_token.source_loc)
 
+    def parse_int_literal() -> my_ast.Literal:
+        if peek().type != TokenType.INT_LITERAL:
+            raise Exception(
+                f'{peek().source_loc}: expected an integer literal')
+        token = consume()
+        return my_ast.Literal(int(token.text), source_loc=token.source_loc)
+
+    def parse_identifier() -> my_ast.Identifier | my_ast.Function:
+        if peek().type != TokenType.IDENTIFIER:
+            raise Exception(
+                f'{peek().source_loc}: expected an identifier, but got "{peek().text}"')
+        token = consume()
+        # check if this is the start of a function
+        if peek().text == "(":
+            return parse_function(token.text)
+        return my_ast.Identifier(token.text, source_loc=token.source_loc)
+
+    def parse_boolean() -> my_ast.Boolean:
+        if peek().text == "true":
+            boolean_token = consume("true")
+            return my_ast.Boolean(True, source_loc=boolean_token.source_loc)
+        elif peek().text == "false":
+            boolean_token = consume("false")
+            return my_ast.Boolean(False, source_loc=boolean_token.source_loc)
+        raise Exception(
+            f'{peek().source_loc}: expected a boolean value, but got "{peek().text}"')
+
+    output = parse_top_level()
     return output

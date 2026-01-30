@@ -1,7 +1,8 @@
 import pytest
 
-from compiler.my_ast import (BinaryOp, Block, Function, Identifier, IfThen,
-                             IfThenElse, Literal, TopLevel, UnaryOp, Variable)
+from compiler.my_ast import (BinaryOp, Block, Boolean, Function, Identifier,
+                             IfThen, IfThenElse, Literal, TopLevel, UnaryOp,
+                             Variable, WhileDo)
 from compiler.parser import parse
 from compiler.tokenizer import SourceLocation, tokenize
 
@@ -13,6 +14,7 @@ def test_parser_basics() -> None:
                                                 "+", Identifier("b"))
     assert parse(tokenize("hapsu + hapsu2")
                  ) == BinaryOp(Identifier("hapsu"), "+", Identifier("hapsu2"))
+    assert parse(tokenize("true")) == Boolean(True)
 
 
 def test_parentheses() -> None:
@@ -171,10 +173,8 @@ def test_blocks() -> None:
                                                     Literal(10)),
     )
 
-    block2 = parse(tokenize("{ x = 10;"
-                            "True }"))
-    assert isinstance(block2, Block)
-    assert block2 == \
+    assert parse(tokenize("{ x = 10;"
+                          "True }")) == \
         Block(BinaryOp(Identifier("x"),
                        "=",
                        Literal(10)),
@@ -239,14 +239,14 @@ def test_advanced_blocks() -> None:
                                 result_expr=Identifier("b")))
 
     assert parse(tokenize("{ if true then { a } b }")) == \
-        Block(IfThen(Identifier("true"),
+        Block(IfThen(Boolean(True),
                      Block(Identifier("a"),
               result_expr=Identifier("a"))),
               Identifier("b"),
               result_expr=Identifier("b"))
 
     assert parse(tokenize("{ if true then { a }; b }")) == \
-        Block(IfThen(Identifier("true"),
+        Block(IfThen(Boolean(True),
                      Block(Identifier("a"),
               result_expr=Identifier("a"))),
               Identifier("b"),
@@ -259,7 +259,7 @@ def test_advanced_blocks() -> None:
         parse(tokenize("{ if true then { a } b c }"))
 
     assert parse(tokenize("{ if true then { a } b; c }")) == \
-        Block(IfThen(Identifier("true"),
+        Block(IfThen(Boolean(True),
                      Block(Identifier("a"),
                            result_expr=Identifier("a"))),
               Identifier("b"),
@@ -267,7 +267,7 @@ def test_advanced_blocks() -> None:
               result_expr=Identifier("c"))
 
     assert parse(tokenize("{ if true then { a } else { b } c }")) == \
-        Block(IfThenElse(Identifier("true"),
+        Block(IfThenElse(Boolean(True),
                          Block(Identifier("a"),
                                result_expr=Identifier("a")),
                          Block(Identifier("b"),
@@ -301,3 +301,36 @@ def test_top_level_blocks() -> None:
                           "+",
                           Literal(2))
                  )
+
+    assert parse(tokenize(" true; b = { x }")) == \
+        TopLevel(Boolean(True),
+                 BinaryOp(Identifier("b"),
+                          "=",
+                          Block(Identifier("x"),
+                                result_expr=Identifier("x")
+                                )
+                          )
+                 )
+
+    assert parse(tokenize("a = 1; b = { x = 2; x }; f(a);")) == \
+        TopLevel(BinaryOp(Identifier("a"),
+                          "=",
+                          Literal(1)
+                          ),
+                 BinaryOp(Identifier("b"),
+                          "=",
+                          Block(BinaryOp(Identifier("x"),
+                                         "=",
+                                         Literal(2)),
+                                Identifier("x"),
+                                result_expr=Identifier("x")
+                                )
+                          ),
+                 Function("f",
+                          Identifier("a"))
+                 )
+
+
+def test_while_do() -> None:
+    assert parse(tokenize("while x do f(x)")) == \
+        WhileDo(Identifier("x"), Function("f", Identifier("x")))

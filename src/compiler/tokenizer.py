@@ -16,7 +16,13 @@ class TokenType(Enum):
 class SourceLocation:
     line: int = -1
     column: int = -1
-    any: bool = False # if this is True, location is excluded when checking for equality of tokens / ast nodes
+    # if this is True, location is excluded when checking for equality of tokens / ast nodes
+    any: bool = False
+
+    def __repr__(self) -> str:
+        if self.any:
+            return f"(any=True)"
+        return f"({self.line}, {self.column})"
 
 
 @dataclass

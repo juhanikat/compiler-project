@@ -36,6 +36,9 @@ class Literal(Expression):
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
 
+    def __repr__(self) -> str:
+        return f"Literal({self.value}) at loc {self.source_loc}"
+
 
 @dataclass(init=False)
 class Identifier(Expression):
@@ -47,6 +50,24 @@ class Identifier(Expression):
 
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
+
+    def __repr__(self) -> str:
+        return f"Identifier({self.name}) at loc {self.source_loc}"
+
+
+@dataclass(init=False)
+class Boolean(Expression):
+    value: bool
+
+    def __init__(self, value: bool, *, source_loc: SourceLocation | None = None) -> None:
+        super().__init__(source_loc=source_loc)
+        self.value = value
+
+    def __eq__(self, value: Any) -> bool:
+        return super().__eq__(value)
+
+    def __repr__(self) -> str:
+        return f"Boolean({self.value}) at loc {self.source_loc}"
 
 
 @dataclass(init=False)
@@ -122,6 +143,20 @@ class IfThenElse(Expression):
         self.if_expr = if_expr
         self.then_expr = then_expr
         self.else_expr = else_expr
+
+    def __eq__(self, value: Any) -> bool:
+        return super().__eq__(value)
+
+
+@dataclass(init=False)
+class WhileDo(Expression):
+    condition: Expression
+    do_expr: Expression
+
+    def __init__(self, condition: Expression, do_expr: Expression, source_loc: SourceLocation | None = None) -> None:
+        super().__init__(source_loc=source_loc)
+        self.condition = condition
+        self.do_expr = do_expr
 
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
