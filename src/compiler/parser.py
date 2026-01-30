@@ -65,7 +65,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         # check if this is the start of a function
         if peek().text == "(":
             return parse_function(token.text)
-        return my_ast.Identifier(token.text)
+        return my_ast.Identifier(token.text, source_loc=token.source_loc)
 
     def parse_expression(allow_vars: bool = False) -> my_ast.Expression:
         """"""
@@ -78,11 +78,12 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
                 new_level_index = left_associative_binary_operators.index(
                     precedence_level)
                 right = parse_term(new_level_index)
-                left = my_ast.BinaryOp(left.source_loc,
-                                       left,
-                                       operator,
-                                       right
-                                       )
+                left = my_ast.BinaryOp(
+                    left,
+                    operator,
+                    right,
+                    source_loc=left.source_loc
+                )
         return left
 
     def parse_term(level_index: int, allow_vars: bool = False) -> my_ast.Expression:
@@ -95,11 +96,12 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
                 new_level_index = left_associative_binary_operators.index(
                     precedence_level)
                 right = parse_term(new_level_index)
-                left = my_ast.BinaryOp(left.source_loc,
-                                       left,
-                                       operator,
-                                       right
-                                       )
+                left = my_ast.BinaryOp(
+                    left,
+                    operator,
+                    right,
+                    source_loc=left.source_loc
+                )
         return left
 
     def parse_factor(allow_vars: bool = False) -> my_ast.Expression:
@@ -130,7 +132,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         return expr
 
     def parse_block() -> my_ast.Block:
-        consume("{")
+        block_start_token = consume("{")
         expressions = []
         result_expr: my_ast.Expression | my_ast.Literal = my_ast.Literal(
             None)
@@ -151,18 +153,18 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
 
         consume("}")
         # if the result_expr was not found inside the loop, is is set to Literal(None)
-        return my_ast.Block(*expressions, result_expr=result_expr)
+        return my_ast.Block(*expressions, result_expr=result_expr, source_loc=block_start_token.source_loc)
 
     def parse_conditional() -> my_ast.IfThenElse | my_ast.IfThen:
-        consume("if")
+        if_token = consume("if")
         if_expr = parse_expression()
         consume("then")
         then_expr = parse_expression()
         if peek().text == "else":
             consume("else")
             else_expr = parse_expression()
-            return my_ast.IfThenElse(if_expr.source_loc, if_expr, then_expr, else_expr)
-        return my_ast.IfThen(if_expr.source_loc, if_expr, then_expr)
+            return my_ast.IfThenElse(if_expr, then_expr, else_expr, source_loc=if_token.source_loc)
+        return my_ast.IfThen(if_expr, then_expr, source_loc=if_token.source_loc)
 
     def parse_function(name: str) -> my_ast.Function:
         consume("(")
@@ -178,11 +180,11 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         if peek().text == "not":
             not_token = consume("not")
             target = parse_expression()
-            return my_ast.UnaryOp(not_token.source_loc, "not", target)
+            return my_ast.UnaryOp("not", target, source_loc=not_token.source_loc)
         elif peek().text == "-":
             minus_token = consume("-")
             target = parse_expression()
-            return my_ast.UnaryOp(minus_token.source_loc, "-", target)
+            return my_ast.UnaryOp("-", target, source_loc=minus_token.source_loc)
         raise Exception(
             f'{peek().source_loc}: expected "not" or "-", but got "{peek().text}"')
 
@@ -200,7 +202,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         consume("=")
         value = parse_expression()
 
-        return my_ast.Variable(var_token.source_loc, name.name, value)
+        return my_ast.Variable(name.name, value, source_loc=var_token.source_loc)
 
     output = parse_expression(True)
     if peek().type != TokenType.END:

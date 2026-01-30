@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Any, Tuple
 
 from compiler.tokenizer import SourceLocation
 
@@ -7,12 +7,12 @@ from compiler.tokenizer import SourceLocation
 @dataclass(init=False)
 class Expression:
     """Base class for AST nodes representing expressions."""
-    source_loc: SourceLocation
+    source_loc: SourceLocation | None
 
     def __init__(self, *, source_loc: SourceLocation | None = None):
         self.source_loc = source_loc
 
-    def __eq__(self, value) -> bool:
+    def __eq__(self, value: Any) -> bool:
         if not isinstance(value, Expression):
             return False
         for self_field, other_field in zip(self.__dict__, value.__dict__):
@@ -29,11 +29,11 @@ class Expression:
 class Literal(Expression):
     value: int | bool | None
 
-    def __init__(self, value: int | bool | None, *, source_loc=None) -> None:
+    def __init__(self, value: int | bool | None, *, source_loc: SourceLocation | None = None) -> None:
         super().__init__(source_loc=source_loc)
         self.value = value
 
-    def __eq__(self, value):
+    def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
 
 
@@ -41,23 +41,11 @@ class Literal(Expression):
 class Identifier(Expression):
     name: str
 
-    def __init__(self, name, *, source_loc=None) -> None:
+    def __init__(self, name: str, *, source_loc: SourceLocation | None = None) -> None:
         super().__init__(source_loc=source_loc)
         self.name = name
 
-    def __eq__(self, value):
-        return super().__eq__(value)
-
-
-@dataclass(init=False)
-class Punctuation(Expression):
-    name: str
-
-    def __init__(self, value, *, source_loc=None):
-        super().__init__(source_loc=source_loc)
-        self.name = name
-
-    def __eq__(self, value):
+    def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
 
 
@@ -66,12 +54,12 @@ class Variable(Expression):
     name: str
     value:  Expression
 
-    def __init__(self, name, value, *, source_loc=None):
+    def __init__(self, name: str, value: Expression, *, source_loc: SourceLocation | None = None):
         super().__init__(source_loc=source_loc)
         self.name = name
         self.value = value
 
-    def __eq__(self, value):
+    def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
 
 
@@ -82,13 +70,13 @@ class BinaryOp(Expression):
     op: str
     right: Expression
 
-    def __init__(self, left, op, right, *, source_loc=None):
+    def __init__(self, left: Expression, op: str, right: Expression, *, source_loc: SourceLocation | None = None):
         super().__init__(source_loc=source_loc)
         self.left = left
         self.op = op
         self.right = right
 
-    def __eq__(self, value):
+    def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
 
 
@@ -98,12 +86,12 @@ class UnaryOp(Expression):
     op: str
     target: Expression
 
-    def __init__(self, op, target, *, source_loc=None):
+    def __init__(self, op: str, target: Expression, *, source_loc: SourceLocation | None = None):
         super().__init__(source_loc=source_loc)
         self.op = op
         self.target = target
 
-    def __eq__(self, value):
+    def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
 
 
@@ -113,12 +101,12 @@ class IfThen(Expression):
     if_expr: Expression
     then_expr: Expression
 
-    def __init__(self, if_expr, then_expr, *, source_loc=None):
+    def __init__(self, if_expr: Expression, then_expr: Expression, *, source_loc: SourceLocation | None = None):
         super().__init__(source_loc=source_loc)
         self.if_expr = if_expr
         self.then_expr = then_expr
 
-    def __eq__(self, value):
+    def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
 
 
@@ -129,13 +117,13 @@ class IfThenElse(Expression):
     then_expr: Expression
     else_expr: Expression
 
-    def __init__(self, if_expr, then_expr, else_expr, *, source_loc=None):
+    def __init__(self, if_expr: Expression, then_expr: Expression, else_expr: Expression, *, source_loc: SourceLocation | None = None):
         super().__init__(source_loc=source_loc)
         self.if_expr = if_expr
         self.then_expr = then_expr
         self.else_expr = else_expr
 
-    def __eq__(self, value):
+    def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
 
 
@@ -144,12 +132,12 @@ class Function(Expression):
     name: str
     args: Tuple[Expression, ...]
 
-    def __init__(self, name: str, *args: Expression, source_loc: SourceLocation = None) -> None:
+    def __init__(self, name: str, *args: Expression, source_loc: SourceLocation | None = None) -> None:
         super().__init__(source_loc=source_loc)
         self.name = name
         self.args = args
 
-    def __eq__(self, value):
+    def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
 
 
@@ -158,10 +146,10 @@ class Block(Expression):
     expressions: Tuple[Expression, ...]
     result_expr: Expression
 
-    def __init__(self, *expressions: Expression, result_expr: Expression, source_loc: SourceLocation = None) -> None:
+    def __init__(self, *expressions: Expression, result_expr: Expression, source_loc: SourceLocation | None = None) -> None:
         super().__init__(source_loc=source_loc)
         self.expressions = expressions
         self.result_expr = result_expr
 
-    def __eq__(self, value):
+    def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)

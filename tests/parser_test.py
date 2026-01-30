@@ -1,8 +1,7 @@
 import pytest
 
 from compiler.my_ast import (BinaryOp, Block, Function, Identifier, IfThen,
-                             IfThenElse, Literal, Punctuation, UnaryOp,
-                             Variable)
+                             IfThenElse, Literal, UnaryOp, Variable)
 from compiler.parser import parse
 from compiler.tokenizer import SourceLocation, tokenize
 
