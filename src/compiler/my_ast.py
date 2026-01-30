@@ -153,3 +153,16 @@ class Block(Expression):
 
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
+
+
+@dataclass(init=False)
+class TopLevel(Expression):
+    """This is identical to a Block, except it does not start and end with {}, and it does not have a result_expr"""
+    expressions: Tuple[Expression, ...]
+
+    def __init__(self, *expressions: Expression, source_loc: SourceLocation | None = None) -> None:
+        super().__init__(source_loc=source_loc)
+        self.expressions = expressions
+
+    def __eq__(self, value: Any) -> bool:
+        return super().__eq__(value)

@@ -1,7 +1,7 @@
 import pytest
 
 from compiler.my_ast import (BinaryOp, Block, Function, Identifier, IfThen,
-                             IfThenElse, Literal, UnaryOp, Variable)
+                             IfThenElse, Literal, TopLevel, UnaryOp, Variable)
 from compiler.parser import parse
 from compiler.tokenizer import SourceLocation, tokenize
 
@@ -286,4 +286,18 @@ def test_advanced_blocks() -> None:
                              result_expr=Identifier("b")),
                        result_expr=Block(Identifier("b"),
                                          result_expr=Identifier("b"))),
+                 )
+
+
+def test_top_level_blocks() -> None:
+    assert parse(tokenize("a = 1;")) == \
+        BinaryOp(Identifier("a"), "=", Literal(1))
+
+    assert parse(tokenize("a = 1; b + 2")) == \
+        TopLevel(BinaryOp(Identifier("a"),
+                          "=",
+                          Literal(1)),
+                 BinaryOp(Identifier("b"),
+                          "+",
+                          Literal(2))
                  )

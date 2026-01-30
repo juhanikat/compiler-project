@@ -68,7 +68,6 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         return my_ast.Identifier(token.text, source_loc=token.source_loc)
 
     def parse_expression(allow_vars: bool = False) -> my_ast.Expression:
-        """"""
         level_index = 0
         left = parse_term(0, allow_vars)
         for precedence_level in left_associative_binary_operators[level_index:]:
@@ -87,7 +86,6 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         return left
 
     def parse_term(level_index: int, allow_vars: bool = False) -> my_ast.Expression:
-        """"""
         left = parse_factor(allow_vars)
         for precedence_level in left_associative_binary_operators[level_index:]:
             while peek().text in precedence_level:
@@ -155,6 +153,23 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         # if the result_expr was not found inside the loop, is is set to Literal(None)
         return my_ast.Block(*expressions, result_expr=result_expr, source_loc=block_start_token.source_loc)
 
+    def parse_top_level() -> my_ast.Expression | my_ast.TopLevel:
+        """Will return either a single Expresison (if there is only one top level expression), or a TopLevel otherwise."""
+        expressions: list[my_ast.Expression] = []
+        expressions.append(parse_expression(True))
+        while peek().text == ";":
+            consume(";")
+            if peek().type != TokenType.END:
+                expressions.append(parse_expression(True))
+
+        if peek().type != TokenType.END:
+            raise Exception(
+                f'{peek().source_loc}: invalid token "{peek().text}"')
+
+        if len(expressions) == 1:
+            return expressions[0]
+        return my_ast.TopLevel(*expressions, source_loc=expressions[0].source_loc)
+
     def parse_conditional() -> my_ast.IfThenElse | my_ast.IfThen:
         if_token = consume("if")
         if_expr = parse_expression()
@@ -204,8 +219,6 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
 
         return my_ast.Variable(name.name, value, source_loc=var_token.source_loc)
 
-    output = parse_expression(True)
-    if peek().type != TokenType.END:
-        raise Exception(
-            f'{peek().source_loc}: invalid token "{peek().text}"')
+    output = parse_top_level()
+
     return output
