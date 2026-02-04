@@ -1,16 +1,35 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Self
+from typing import Any, Callable, Dict, Self
 
 from compiler import my_ast
 from compiler.my_ast import Expression
 
-type Value = int | bool | None | Expression
+type Value = int | bool | None | Expression | Callable
 
 
-@dataclass
+@dataclass(init=False)
 class SymTable:
     locals: Dict[str, Value]
     parent: Self | None = None
+
+    def __init__(self) -> None:
+        self.locals = {
+            "+": lambda a, b:  a + b,
+            "unary_-": lambda a: -a,
+            "*": lambda a, b:  a * b,
+            "/": lambda a, b:  a / b,
+            "%": lambda a, b:  a % b,
+            "<": lambda a, b:  a < b,
+            "<=": lambda a, b:  a <= b,
+            ">": lambda a, b:  a > b,
+            ">=": lambda a, b:  a >= b,
+            "==": lambda a, b:  a == b,
+            "!=": lambda a, b:  a != b,
+            "or": lambda a, b:  a or b,
+            "and": lambda a, b:  a and b,
+            "while": lambda a, b:  a / b,
+
+        }
 
     def add(self, name: str, value: Value) -> None:
         if self.locals.get(name):
@@ -37,10 +56,12 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
     if node is None:
         return None
     if sym_table is None:
-        sym_table = SymTable(locals={})
+        sym_table = SymTable()
 
     match node:
         case my_ast.Literal():
+            return node.value
+        case my_ast.Boolean():
             return node.value
 
         case my_ast.Variable():
@@ -55,26 +76,41 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
                 return interpret(value, sym_table)
             return value
 
+        case my_ast.UnaryOp():
+            target: Any = interpret(node.target, sym_table)
+            unary_func = sym_table.lookup("unary_" + node.op)
+
+            if not unary_func:
+                raise Exception(f"Invalid operator '{node.op}' for UnaryOp")
+            if not callable(unary_func):
+                raise Exception(f"{node.op} is not callable")
+
+            return unary_func(target)
+
         case my_ast.BinaryOp():
             a: Any = interpret(node.left, sym_table)
             b: Any = interpret(node.right, sym_table)
-            match node.op:
-                case "+":
-                    return a + b
-                case "<":
-                    return a < b
-                case ">":
-                    return a > b
-                case "=":
-                    # TODO: maybe move this elsewhere?
-                    if not isinstance(node.left, my_ast.Identifier):
-                        raise Exception(
-                            f"{node.left} is not an identifier, so it cannot be assigned to")
-                    sym_table.change(node.left.name, b)
-                    return None
 
-                case _:
-                    raise Exception("Invalid operator for BinaryOp")
+            if node.op == "=":
+                if not isinstance(node.left, my_ast.Identifier):
+                    raise Exception(
+                        f"{node.left} is not an identifier, so it cannot be assigned to")
+                sym_table.change(node.left.name, b)
+                return None
+
+            binary_func = sym_table.lookup(node.op)
+
+            if not binary_func:
+                raise Exception(f"Invalid operator '{node.op}' for BinaryOp")
+            if not callable(binary_func):
+                raise Exception(f"{node.op} is not callable")
+
+            return binary_func(a, b)
+
+        case my_ast.IfThen():
+            if interpret(node.if_expr, sym_table):
+                return interpret(node.then_expr, sym_table)
+            return None
 
         case my_ast.IfThenElse():
             if interpret(node.if_expr, sym_table):

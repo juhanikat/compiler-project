@@ -9,6 +9,9 @@ from compiler.tokenizer import tokenize
 def test_interpreter_basics() -> None:
     assert interpret(parse(tokenize("2 + 3"))) == 5
     assert interpret(parse(tokenize("2 + 2 + 3"))) == 7
+    assert interpret(parse(tokenize("2 / 4"))) == 0.5
+    # TODO: fix this bug in parser
+    assert interpret(parse(tokenize("2 + 2 / 4 * 5"))) == 4.5
     assert interpret(parse(tokenize("var x = 5; x"))) == 5
     with pytest.raises(Exception):
         interpret(parse(tokenize("x = 5")))

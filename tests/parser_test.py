@@ -10,6 +10,14 @@ from compiler.tokenizer import SourceLocation, tokenize
 def test_parser_basics() -> None:
     assert parse(tokenize("1")) == Literal(1)
     assert parse(tokenize("1 + 2")) == BinaryOp(Literal(1), "+", Literal(2))
+    # TODO: fix calculation order!!!
+    assert parse(tokenize("1 + 2 * 3 / 4")) == BinaryOp(Literal(1),
+                                                        "+",
+                                                        BinaryOp(BinaryOp(Literal(2),
+                                                                          "*",
+                                                                          Literal(3)),
+                                                                 "/",
+                                                                 Literal(4)))
     assert parse(tokenize("a + b")) == BinaryOp(Identifier("a"),
                                                 "+", Identifier("b"))
     assert parse(tokenize("hapsu + hapsu2")
