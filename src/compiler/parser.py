@@ -139,7 +139,6 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             consume(";")
 
         consume("}")
-        # if the result_expr was not found inside the loop, is is set to Literal(None)
         return my_ast.Block(*expressions, source_loc=block_start_token.source_loc)
 
     def parse_top_level() -> my_ast.Expression | my_ast.TopLevel:

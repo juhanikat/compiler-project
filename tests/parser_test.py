@@ -219,6 +219,15 @@ def test_variable_declaration() -> None:
                        Identifier(
                      "y")))
 
+    assert parse(tokenize("var x = 1; { x = 2; x }")) == \
+        TopLevel(Variable("x",
+                          Literal(1)),
+                 Block(BinaryOp(Identifier("x"),
+                               "=",
+                               Literal(2)),
+                       Identifier("x"))
+                 )
+
     with pytest.raises(Exception):
         parse(tokenize("var x = var y"))
     with pytest.raises(Exception):

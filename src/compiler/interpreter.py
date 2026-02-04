@@ -10,26 +10,33 @@ type Value = int | bool | None | Expression | Callable
 @dataclass(init=False)
 class SymTable:
     locals: Dict[str, Value]
-    parent: Self | None = None
+    parent: Self | None
 
-    def __init__(self) -> None:
-        self.locals = {
-            "+": lambda a, b:  a + b,
-            "unary_-": lambda a: -a,
-            "*": lambda a, b:  a * b,
-            "/": lambda a, b:  a / b,
-            "%": lambda a, b:  a % b,
-            "<": lambda a, b:  a < b,
-            "<=": lambda a, b:  a <= b,
-            ">": lambda a, b:  a > b,
-            ">=": lambda a, b:  a >= b,
-            "==": lambda a, b:  a == b,
-            "!=": lambda a, b:  a != b,
-            "or": lambda a, b:  a or b,
-            "and": lambda a, b:  a and b,
-            "while": lambda a, b:  a / b,
-
-        }
+    def __init__(self, locals: Dict[str, Value] | None = None, parent: Self | None = None) -> None:
+        if locals:
+            self.locals = locals
+        else:
+            self.locals = {
+                "+": lambda a, b:  a + b,
+                "unary_-": lambda a: -a,
+                "*": lambda a, b:  a * b,
+                "/": lambda a, b:  a / b,
+                "%": lambda a, b:  a % b,
+                "<": lambda a, b:  a < b,
+                "<=": lambda a, b:  a <= b,
+                ">": lambda a, b:  a > b,
+                ">=": lambda a, b:  a >= b,
+                "==": lambda a, b:  a == b,
+                "!=": lambda a, b:  a != b,
+                "or": lambda a, b:  a or b,
+                "and": lambda a, b:  a and b,
+                "unary_not": lambda a: not a,
+                "while": lambda a, b:  a / b,
+            }
+        if parent:
+            self.parent = parent
+        else:
+            self.parent = None
 
     def add(self, name: str, value: Value) -> None:
         if self.locals.get(name):
@@ -45,11 +52,13 @@ class SymTable:
         return None
 
     def change(self, name: str, new_value: Value) -> None:
-        while not self.locals.get(name):
+        if not self.locals.get(name):
             if self.parent is None:
                 raise Exception(f"{name} does not exist in the symbol table")
             self.parent.change(name, new_value)
-        self.locals[name] = new_value
+        else:
+            self.locals[name] = new_value
+        return None
 
 
 def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None) -> Value:
@@ -124,9 +133,18 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
             return interpret(node.expressions[-1], sym_table)
 
         case my_ast.Block():
+            if len(node.expressions) == 0:
+                return None
+            block_sym_table = SymTable(locals=None, parent=sym_table)
             for i in range(len(node.expressions) - 1):
-                interpret(node.expressions[i], sym_table)
-            return interpret(node.expressions[-1], sym_table)
+                interpret(node.expressions[i], block_sym_table)
+            return interpret(node.expressions[-1], block_sym_table)
+
+        case my_ast.WhileDo():
+            while interpret(node.condition, sym_table):
+                interpret(node.do_expr, sym_table)
+            return None
+
         case _:
             raise Exception(
                 f"Interpreter is not implemented for node type {node}")
