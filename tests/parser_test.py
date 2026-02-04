@@ -4,13 +4,12 @@ from compiler.my_ast import (BinaryOp, Block, Boolean, Function, Identifier,
                              IfThen, IfThenElse, Literal, TopLevel, UnaryOp,
                              Variable, WhileDo)
 from compiler.parser import parse
-from compiler.tokenizer import SourceLocation, tokenize
+from compiler.tokenizer import tokenize
 
 
 def test_parser_basics() -> None:
     assert parse(tokenize("1")) == Literal(1)
     assert parse(tokenize("1 + 2")) == BinaryOp(Literal(1), "+", Literal(2))
-    # TODO: fix calculation order!!!
     assert parse(tokenize("1 + 2 * 3 / 4")) == BinaryOp(Literal(1),
                                                         "+",
                                                         BinaryOp(BinaryOp(Literal(2),

@@ -4,7 +4,7 @@ from compiler import my_ast
 from compiler.tokenizer import SourceLocation, Token, TokenType
 
 left_associative_binary_operators: List[List[str]] = [
-    ['='],
+    ["="],
     ['or'],
     ['and'],
     ['==', '!='],
@@ -70,6 +70,10 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
 
     def parse_term(level_index: int, allow_vars: bool = False) -> my_ast.Expression:
         left = parse_factor(allow_vars)
+        # NOTE: ????? it works
+        if left_associative_binary_operators[level_index] != ["="]:
+            level_index += 1
+
         for precedence_level in left_associative_binary_operators[level_index:]:
             while peek().text in precedence_level:
                 operator_token = consume()
