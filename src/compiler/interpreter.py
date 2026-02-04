@@ -88,9 +88,9 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
             return interpret(node.expressions[-1], sym_table)
 
         case my_ast.Block():
-            for i in range(len(node.expressions)):
+            for i in range(len(node.expressions) - 1):
                 interpret(node.expressions[i], sym_table)
-            return interpret(node.result_expr, sym_table)
+            return interpret(node.expressions[-1], sym_table)
         case _:
             raise Exception(
                 f"Interpreter is not implemented for node type {node}")

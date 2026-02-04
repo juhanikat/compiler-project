@@ -168,9 +168,7 @@ def test_blocks() -> None:
     assert parse(tokenize("{ x = 10 }")) == Block(
         BinaryOp(Identifier("x"),
                  "=",
-                 Literal(10)), result_expr=BinaryOp(Identifier("x"),
-                                                    "=",
-                                                    Literal(10)),
+                 Literal(10)),
     )
 
     assert parse(tokenize("{ x = 10;"
@@ -178,11 +176,11 @@ def test_blocks() -> None:
         Block(BinaryOp(Identifier("x"),
                        "=",
                        Literal(10)),
-              Identifier("True"), result_expr=Identifier("True")
+              Identifier("True")
               )
 
     assert parse(tokenize("{ a; }")) == Block(
-        Identifier("a"), result_expr=Literal(None))
+        Identifier("a"))
 
     assert parse(tokenize("x = { f(a); b }")) == \
         BinaryOp(Identifier("x"),
@@ -190,12 +188,10 @@ def test_blocks() -> None:
                  Block(Function("f",
                                 Identifier("a")),
                        Identifier("b"),
-                       result_expr=Identifier("b")
                        )
                  )
 
-    assert parse(tokenize("{ { } }")) == Block(Block(result_expr=Literal(None)),
-                                               result_expr=Block(result_expr=Literal(None)))
+    assert parse(tokenize("{ { } }")) == Block(Block())
 
     with pytest.raises(Exception):
         parse(tokenize("{ 1 + 2"
@@ -214,8 +210,7 @@ def test_variable_declaration() -> None:
                  Block(Variable("y",
                                 Literal(1)),
                        Identifier(
-                     "y"),
-                     result_expr=Identifier("y")))
+                     "y")))
 
     with pytest.raises(Exception):
         parse(tokenize("var x = var y"))
@@ -226,31 +221,27 @@ def test_variable_declaration() -> None:
 def test_advanced_blocks() -> None:
     assert parse(tokenize("{ { a } }")) == \
         Block(Block(Identifier("a"),
-                    result_expr=Identifier("a")),
-              result_expr=Block(Identifier("a"),
-                                result_expr=Identifier("a")))
+                    ),
+              )
 
     assert parse(tokenize("{ { a } { b } }")) == \
-        Block(Block(Identifier("a"),
-                    result_expr=Identifier("a")),
-              Block(Identifier("b"),
-                    result_expr=Identifier("b")),
-              result_expr=Block(Identifier("b"),
-                                result_expr=Identifier("b")))
+        Block(Block(Identifier("a")),
+              Block(Identifier("b")),
+              )
 
     assert parse(tokenize("{ if true then { a } b }")) == \
         Block(IfThen(Boolean(True),
                      Block(Identifier("a"),
-              result_expr=Identifier("a"))),
+                           )),
               Identifier("b"),
-              result_expr=Identifier("b"))
+              )
 
     assert parse(tokenize("{ if true then { a }; b }")) == \
         Block(IfThen(Boolean(True),
                      Block(Identifier("a"),
-              result_expr=Identifier("a"))),
+                           )),
               Identifier("b"),
-              result_expr=Identifier("b"))
+              )
 
     with pytest.raises(Exception):
         parse(tokenize("{ a b }"))
@@ -261,31 +252,29 @@ def test_advanced_blocks() -> None:
     assert parse(tokenize("{ if true then { a } b; c }")) == \
         Block(IfThen(Boolean(True),
                      Block(Identifier("a"),
-                           result_expr=Identifier("a"))),
+                           )),
               Identifier("b"),
               Identifier("c"),
-              result_expr=Identifier("c"))
+              )
 
     assert parse(tokenize("{ if true then { a } else { b } c }")) == \
         Block(IfThenElse(Boolean(True),
                          Block(Identifier("a"),
-                               result_expr=Identifier("a")),
+                               ),
                          Block(Identifier("b"),
-                               result_expr=Identifier("b"))),
+                               )),
               Identifier("c"),
-              result_expr=Identifier("c"))
+              )
 
     assert parse(tokenize("x = { { f(a) } { b } }")) == \
         BinaryOp(Identifier("x"),
                  "=",
                  Block(Block(Function("f",
                                       Identifier("a")),
-                       result_expr=Function("f",
-                                            Identifier("a"))),
+                             ),
                        Block(Identifier("b"),
-                             result_expr=Identifier("b")),
-                       result_expr=Block(Identifier("b"),
-                                         result_expr=Identifier("b"))),
+                             ),
+                       ),
                  )
 
 
@@ -306,9 +295,7 @@ def test_top_level_blocks() -> None:
         TopLevel(Boolean(True),
                  BinaryOp(Identifier("b"),
                           "=",
-                          Block(Identifier("x"),
-                                result_expr=Identifier("x")
-                                )
+                          Block(Identifier("x"))
                           )
                  )
 
@@ -323,7 +310,6 @@ def test_top_level_blocks() -> None:
                                          "=",
                                          Literal(2)),
                                 Identifier("x"),
-                                result_expr=Identifier("x")
                                 )
                           ),
                  Function("f",
