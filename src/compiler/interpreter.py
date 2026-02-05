@@ -39,26 +39,25 @@ class SymTable:
             self.parent = None
 
     def add(self, name: str, value: Value) -> None:
-        if self.locals.get(name):
+        if name in self.locals:
             raise Exception(f"Variable {name} was already in the symbol table")
         self.locals[name] = value
         return None
 
     def lookup(self, name: str) -> Value:
-        if self.locals.get(name):
+        if name in self.locals:
             return self.locals.get(name)
         elif self.parent:
             return self.parent.lookup(name)
         return None
 
     def change(self, name: str, new_value: Value) -> None:
-        if not self.locals.get(name):
+        if not name in self.locals:
             if self.parent is None:
                 raise Exception(f"{name} does not exist in the symbol table")
             self.parent.change(name, new_value)
         else:
             self.locals[name] = new_value
-        return None
 
 
 def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None) -> Value:
