@@ -176,6 +176,7 @@ def test_blocks() -> None:
         BinaryOp(Identifier("x"),
                  "=",
                  Literal(10)),
+        returns_last=True
     )
 
     assert parse(tokenize("{ x = 10;"
@@ -183,8 +184,7 @@ def test_blocks() -> None:
         Block(BinaryOp(Identifier("x"),
                        "=",
                        Literal(10)),
-              Identifier("True")
-              )
+              Identifier("True"), returns_last=True)
 
     assert parse(tokenize("{ a; }")) == Block(
         Identifier("a"))
@@ -195,10 +195,13 @@ def test_blocks() -> None:
                  Block(Function("f",
                                 Identifier("a")),
                        Identifier("b"),
+                       returns_last=True
                        )
                  )
 
-    assert parse(tokenize("{ { } }")) == Block(Block())
+    # NOTE: might need to change this returns_last behaviour
+    assert parse(tokenize("{ { } }")) == Block(
+        Block(), returns_last=True)
 
     with pytest.raises(Exception):
         parse(tokenize("{ 1 + 2"
@@ -216,16 +219,17 @@ def test_variable_declaration() -> None:
         Variable("x",
                  Block(Variable("y",
                                 Literal(1)),
-                       Identifier(
-                     "y")))
+                       Identifier("y"),
+                       returns_last=True))
 
     assert parse(tokenize("var x = 1; { x = 2; x }")) == \
         TopLevel(Variable("x",
                           Literal(1)),
                  Block(BinaryOp(Identifier("x"),
-                               "=",
-                               Literal(2)),
-                       Identifier("x"))
+                                "=",
+                                Literal(2)),
+                       Identifier("x"),
+                       returns_last=True)
                  )
 
     with pytest.raises(Exception):
@@ -237,26 +241,31 @@ def test_variable_declaration() -> None:
 def test_advanced_blocks() -> None:
     assert parse(tokenize("{ { a } }")) == \
         Block(Block(Identifier("a"),
+                    returns_last=True
                     ),
+              returns_last=True
               )
 
     assert parse(tokenize("{ { a } { b } }")) == \
-        Block(Block(Identifier("a")),
-              Block(Identifier("b")),
-              )
+        Block(Block(Identifier("a"), returns_last=True),
+              Block(Identifier("b"), returns_last=True),
+              returns_last=True)
 
     assert parse(tokenize("{ if true then { a } b }")) == \
         Block(IfThen(Boolean(True),
                      Block(Identifier("a"),
+                           returns_last=True
                            )),
               Identifier("b"),
-              )
+              returns_last=True)
 
     assert parse(tokenize("{ if true then { a }; b }")) == \
         Block(IfThen(Boolean(True),
                      Block(Identifier("a"),
+                           returns_last=True
                            )),
               Identifier("b"),
+              returns_last=True
               )
 
     with pytest.raises(Exception):
@@ -268,18 +277,23 @@ def test_advanced_blocks() -> None:
     assert parse(tokenize("{ if true then { a } b; c }")) == \
         Block(IfThen(Boolean(True),
                      Block(Identifier("a"),
+                           returns_last=True
                            )),
               Identifier("b"),
               Identifier("c"),
+              returns_last=True
               )
 
     assert parse(tokenize("{ if true then { a } else { b } c }")) == \
         Block(IfThenElse(Boolean(True),
                          Block(Identifier("a"),
+                               returns_last=True
                                ),
                          Block(Identifier("b"),
+                               returns_last=True
                                )),
               Identifier("c"),
+              returns_last=True
               )
 
     assert parse(tokenize("x = { { f(a) } { b } }")) == \
@@ -287,9 +301,12 @@ def test_advanced_blocks() -> None:
                  "=",
                  Block(Block(Function("f",
                                       Identifier("a")),
+                             returns_last=True
                              ),
                        Block(Identifier("b"),
+                             returns_last=True
                              ),
+                       returns_last=True
                        ),
                  )
 
@@ -311,7 +328,7 @@ def test_top_level_blocks() -> None:
         TopLevel(Boolean(True),
                  BinaryOp(Identifier("b"),
                           "=",
-                          Block(Identifier("x"))
+                          Block(Identifier("x"), returns_last=True)
                           )
                  )
 
@@ -325,7 +342,7 @@ def test_top_level_blocks() -> None:
                           Block(BinaryOp(Identifier("x"),
                                          "=",
                                          Literal(2)),
-                                Identifier("x"),
+                                Identifier("x"), returns_last=True
                                 )
                           ),
                  Function("f",

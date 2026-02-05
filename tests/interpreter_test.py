@@ -53,6 +53,7 @@ def test_blocks() -> None:
     assert interpret(parse(tokenize("{ 2 + 3 }"))) == 5
     assert interpret(parse(tokenize("{ 2 + 3; 2 + 4 }"))) == 6
     assert interpret(parse(tokenize("{ { 2 + 3; 2 + 4 } { 5 } }"))) == 5
+    assert interpret(parse(tokenize("{ 2 + 3; }"))) == None
 
 
 def test_while_do() -> None:

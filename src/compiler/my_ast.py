@@ -179,10 +179,12 @@ class Function(Expression):
 @dataclass(init=False)
 class Block(Expression):
     expressions: Tuple[Expression, ...]
+    returns_last: bool # set to True if the last expression inside the block does not end with a semicolon
 
-    def __init__(self, *expressions: Expression, source_loc: SourceLocation | None = None) -> None:
+    def __init__(self, *expressions: Expression, returns_last: bool = False, source_loc: SourceLocation | None = None) -> None:
         super().__init__(source_loc=source_loc)
         self.expressions = expressions
+        self.returns_last = returns_last
 
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)

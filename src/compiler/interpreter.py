@@ -142,7 +142,11 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
             block_sym_table = SymTable(locals=None, parent=sym_table)
             for i in range(len(node.expressions) - 1):
                 interpret(node.expressions[i], block_sym_table)
-            return interpret(node.expressions[-1], block_sym_table)
+            if node.returns_last:
+                return interpret(node.expressions[-1], block_sym_table)
+            else:
+                interpret(node.expressions[-1], block_sym_table)
+                return None
 
         case my_ast.WhileDo():
             while interpret(node.condition, sym_table):

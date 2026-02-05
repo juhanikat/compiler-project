@@ -124,6 +124,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
     def parse_block() -> my_ast.Block:
         block_start_token = consume("{")
         expressions = []
+        returns_last = False
 
         while peek().text != "}":
             expression = parse_expression(True)
@@ -134,12 +135,13 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
                     # NOTE: might cause issues later??
                     continue
 
-                # this is the last expression inside the block
+                # this expression is returned from the block
+                returns_last = True
                 break
             consume(";")
 
         consume("}")
-        return my_ast.Block(*expressions, source_loc=block_start_token.source_loc)
+        return my_ast.Block(*expressions, returns_last=returns_last, source_loc=block_start_token.source_loc)
 
     def parse_top_level() -> my_ast.Expression | my_ast.TopLevel:
         """Will return either a single Expresison (if there is only one top level expression), or a TopLevel otherwise."""
