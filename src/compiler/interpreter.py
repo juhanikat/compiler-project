@@ -97,6 +97,11 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
 
         case my_ast.BinaryOp():
             a: Any = interpret(node.left, sym_table)
+            # evaluate short-circuiting operators before interpreting the right side
+            if node.op == "or" and a == True:
+                return True
+            elif node.op == "and" and a == False:
+                return False
             b: Any = interpret(node.right, sym_table)
 
             if node.op == "=":

@@ -31,6 +31,24 @@ def test_variables() -> None:
         interpret(parse(tokenize("var x = 3; 2 = x")))
 
 
+def test_logicals() -> None:
+    assert interpret(parse(tokenize("true and false"))) == False
+    assert interpret(parse(tokenize("true and true"))) == True
+    assert interpret(parse(tokenize("true or false"))) == True
+    assert interpret(parse(tokenize("1 or 0"))) == True
+    assert interpret(
+        parse(tokenize("var moi = true; var hei = false; moi or hei"))) == True
+
+    # right_size should be false since this should short_circuit
+    assert interpret(
+        parse(tokenize("var right_side = false; true or { right_side = true; true }; right_side"))) == False
+    assert interpret(
+        parse(tokenize("var right_side = false; false and { right_side = false; true }; right_side"))) == False
+
+    with pytest.raises(Exception):
+        interpret(parse(tokenize("true or or false")))
+
+
 def test_blocks() -> None:
     assert interpret(parse(tokenize("{ 2 + 3 }"))) == 5
     assert interpret(parse(tokenize("{ 2 + 3; 2 + 4 }"))) == 6
