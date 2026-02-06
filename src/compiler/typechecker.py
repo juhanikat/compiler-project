@@ -104,6 +104,14 @@ def typecheck(node: my_ast.Expression | None) -> MyType:
                 raise TypeError(
                     f"{node.value} is not an integer, a boolean or NoneType")
 
+        case my_ast.Boolean():
+            # TODO: should probably remove my_ast.Boolean entirely since Literal can already be bool?
+            if isinstance(node.value, bool):
+                return Bool()
+            else:
+                raise TypeError(
+                    f"{node.value} is not a boolean")
+
         case my_ast.BinaryOp():
             left_type = typecheck(node.left)
             right_type = typecheck(node.right)
@@ -129,11 +137,31 @@ def typecheck(node: my_ast.Expression | None) -> MyType:
 
         case my_ast.IfThenElse():
             t1 = typecheck(node.if_expr)
-            if t1 is not Bool:
+            if not isinstance(t1, Bool):
                 raise Exception()
             t2 = typecheck(node.then_expr)
             t3 = typecheck(node.else_expr)
             if t2 != t3:
                 raise Exception()
+            return t2  # or t3, they are the same type
+
+        case my_ast.WhileDo():
+            t1 = typecheck(node.condition)
+            if not isinstance(t1, Bool):
+                raise Exception("while loop condition is not bool")
+            t2 = typecheck(node.do_expr)
             return t2
+
+        case my_ast.Block():
+            if node.returns_last:
+                t1 = typecheck(node.expressions[-1])
+                if not isinstance(t1, (Bool, Int, Unit)):
+                    raise Exception(
+                        "Block return value is not Int, Bool or Unit")
+                return t1
+            return Unit()
+
+        case my_ast.TopLevel():
+            return Unit()
+
     raise Exception("No match")

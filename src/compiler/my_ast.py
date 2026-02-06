@@ -179,7 +179,7 @@ class Block(Expression):
 
 @dataclass(init=False)
 class TopLevel(Expression):
-    """This is identical to a Block, except it does not start and end with brackets {}"""
+    """This is identical to a Block, except it does not start and end with brackets {}, and it doesn't have the returns_last flag."""
     expressions: Tuple[Expression, ...]
 
     def __init__(self, *expressions: Expression, source_loc: SourceLocation | None = None) -> None:
