@@ -94,15 +94,16 @@ def test_if_then_else() -> None:
 
 
 def test_functions() -> None:
-    assert parse(tokenize("f(1, 2)")) == Function("f", Literal(1), Literal(2))
-    assert parse(tokenize("g(1 , 2 + 3, 3 * 4)")) == Function("g",
-                                                              Literal(1),
-                                                              BinaryOp(Literal(2),
-                                                                       "+",
-                                                                       Literal(3)),
-                                                              BinaryOp(Literal(3),
-                                                                       "*",
-                                                                       Literal(4)))
+    assert parse(tokenize("f(a, b)")) == Function(
+        "f", Identifier("a"), Identifier("b"))
+    assert parse(tokenize("g(a, b + c, c * d)")) == Function("g",
+                                                             Identifier("a"),
+                                                             BinaryOp(Identifier("b"),
+                                                                      "+",
+                                                                      Identifier("c")),
+                                                             BinaryOp(Identifier("c"),
+                                                                      "*",
+                                                                      Identifier("d")))
     assert parse(tokenize("h(a, b + c)")) == Function("h",
                                                       Identifier("a"),
                                                       BinaryOp(Identifier("b"),

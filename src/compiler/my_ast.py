@@ -71,20 +71,6 @@ class Boolean(Expression):
 
 
 @dataclass(init=False)
-class Variable(Expression):
-    name: str
-    value:  Expression
-
-    def __init__(self, name: str, value: Expression, *, source_loc: SourceLocation | None = None):
-        super().__init__(source_loc=source_loc)
-        self.name = name
-        self.value = value
-
-    def __eq__(self, value: Any) -> bool:
-        return super().__eq__(value)
-
-
-@dataclass(init=False)
 class BinaryOp(Expression):
     """AST node for a binary operation like `A + B`"""
     left: Expression
@@ -165,12 +151,12 @@ class WhileDo(Expression):
 @dataclass(init=False)
 class Function(Expression):
     name: str
-    args: Tuple[Expression, ...]
+    params: Tuple[Expression, ...]
 
-    def __init__(self, name: str, *args: Expression, source_loc: SourceLocation | None = None) -> None:
+    def __init__(self, name: str, *params: Expression, source_loc: SourceLocation | None = None) -> None:
         super().__init__(source_loc=source_loc)
         self.name = name
-        self.args = args
+        self.params = params
 
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
@@ -179,7 +165,8 @@ class Function(Expression):
 @dataclass(init=False)
 class Block(Expression):
     expressions: Tuple[Expression, ...]
-    returns_last: bool # set to True if the last expression inside the block does not end with a semicolon
+    # set to True if the last expression inside the block does not end with a semicolon
+    returns_last: bool
 
     def __init__(self, *expressions: Expression, returns_last: bool = False, source_loc: SourceLocation | None = None) -> None:
         super().__init__(source_loc=source_loc)
@@ -198,6 +185,20 @@ class TopLevel(Expression):
     def __init__(self, *expressions: Expression, source_loc: SourceLocation | None = None) -> None:
         super().__init__(source_loc=source_loc)
         self.expressions = expressions
+
+    def __eq__(self, value: Any) -> bool:
+        return super().__eq__(value)
+
+
+@dataclass(init=False)
+class Variable(Expression):
+    name: str | Function
+    value:  Expression
+
+    def __init__(self, name: str | Function, value: Expression, *, source_loc: SourceLocation | None = None):
+        super().__init__(source_loc=source_loc)
+        self.name = name
+        self.value = value
 
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)

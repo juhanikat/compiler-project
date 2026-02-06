@@ -174,12 +174,18 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
     def parse_function(name: str) -> my_ast.Function:
         consume("(")
         params = []
-        params.append(parse_expression())
-        while peek().text == ",":
-            consume(",")
-            params.append(parse_expression())
+        # check if the function has any parameters
+        if peek().text != ")":
+            first_param = parse_expression()
+            params.append(first_param)
+
+            while peek().text == ",":
+                consume(",")
+                param = parse_expression()
+                params.append(param)
+
         consume(")")
-        return my_ast.Function(name, *params)
+        return my_ast.Function(name, *tuple(params))
 
     def parse_unary() -> my_ast.UnaryOp:
         if peek().text == "not":
@@ -197,15 +203,16 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         var_token = consume("var")
         if peek().type == TokenType.IDENTIFIER:
             name = parse_identifier()
-            if isinstance(name, my_ast.Function):
-                raise Exception(
-                    "f'{peek().source_loc}: got function when identifier was required")
         else:
             raise Exception(
                 f'{peek().source_loc}: expected the name of the variable, but got "{peek().text}"')
 
         consume("=")
         value = parse_expression()
+        if isinstance(name, my_ast.Function):
+            if not isinstance(value, my_ast.Block):
+                raise Exception(f"Function value can only be a Block")
+            return my_ast.Variable(name, value, source_loc=var_token.source_loc)
         return my_ast.Variable(name.name, value, source_loc=var_token.source_loc)
 
     def parse_while_do() -> my_ast.WhileDo:

@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Self
+from typing import Any, Callable, Dict, Iterable, Self, Tuple
 
 from compiler import my_ast
 from compiler.my_ast import Expression
 
-type Value = int | bool | None | Expression | Callable
+type Value = int | bool | None | Expression | Callable | Tuple[my_ast.Expression, ...]
 
 
 @dataclass(init=False)
@@ -73,13 +73,28 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
             return node.value
 
         case my_ast.Variable():
-            sym_table.add(node.name, node.value)
+            if isinstance(node.name, my_ast.Function):
+                # if node.value is a Block, then this is a function
+                # add two things to sym_table: function_name -> Block, and function_name -> function_params
+                sym_table.add(node.name.name, node.value)
+                sym_table.add(node.name.name + "_params", node.name.params)
+            elif isinstance(node.value, my_ast.Literal) or isinstance(node.value, my_ast.Boolean):
+                sym_table.add(node.name, node.value)
+
+            # should getting here throw an Exception? Doing so breaks tests currently
             return None
 
         case my_ast.Identifier():
             value = sym_table.lookup(node.name)
+
             if value is None:
-                raise Exception(f"\'{node.name}' is not defined")
+                exception_text = f"'{node.name}' is not defined"
+                if node.name == "True":
+                    exception_text = f"'{node.name}' is not defined, did you mean 'true'?"
+                elif node.name == "False":
+                    exception_text = f"'{node.name}' is not defined, did you mean 'false'?"
+                raise Exception(exception_text)
+
             if isinstance(value, my_ast.Expression):
                 return interpret(value, sym_table)
             return value
@@ -108,6 +123,9 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
                 if not isinstance(node.left, my_ast.Identifier):
                     raise Exception(
                         f"{node.left} is not an identifier, so it cannot be assigned to")
+                if isinstance(node.left, my_ast.Function) and not isinstance(node.right, my_ast.Block):
+                    raise Exception(
+                        f"Cannot assign: {node.left} is a function, but {node.right} is not a Block")
                 sym_table.change(node.left.name, b)
                 return None
 
@@ -152,6 +170,27 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
             while interpret(node.condition, sym_table):
                 interpret(node.do_expr, sym_table)
             return None
+
+        case my_ast.Function():
+            func_block = sym_table.lookup(node.name)
+            func_params = sym_table.lookup(node.name + "_params")
+            if not isinstance(func_params, Iterable):
+                raise Exception
+            if not func_block:
+                raise Exception(f"Function {node.name} is not defined")
+            if not isinstance(func_block, my_ast.Block):
+                raise Exception(
+                    f"{func_block} is not a Block")
+
+            given_args = node.params
+            func_sym_table = SymTable(locals=None, parent=sym_table)
+            for func_arg, given_arg in zip(func_params, given_args):
+                if not isinstance(func_arg, my_ast.Identifier):
+                    raise Exception
+
+                func_sym_table.add(
+                    func_arg.name, interpret(given_arg, sym_table))
+            return interpret(func_block, func_sym_table)
 
         case _:
             raise Exception(

@@ -54,10 +54,11 @@ def test_blocks() -> None:
     assert interpret(parse(tokenize("{ 2 + 3; 2 + 4 }"))) == 6
     assert interpret(parse(tokenize("{ { 2 + 3; 2 + 4 } { 5 } }"))) == 5
     assert interpret(parse(tokenize("{ 2 + 3; }"))) == None
+    assert interpret(parse(tokenize("{ 2 + 3; { 3 + 4; } }"))) == None
+    assert interpret(parse(tokenize("{ 2 + 3; { 3 + 4; }; }"))) == None
 
 
 def test_while_do() -> None:
-    pass
     assert interpret(
         parse(tokenize("var x = 1; while x < 5 do { x = x + 1 }"))) == None
 
@@ -66,3 +67,32 @@ def test_while_do() -> None:
 
     assert interpret(parse(tokenize("{ 2 + 3; 2 + 4 }"))) == 6
     assert interpret(parse(tokenize("{ { 2 + 3; 2 + 4 } { 5 } }"))) == 5
+
+
+def test_functions() -> None:
+    assert interpret(
+        parse(tokenize("var f() = { true }; f()"))) == True
+    assert interpret(
+        parse(tokenize("var f(a, b) = { a + b }; f(1, 2)"))) == 3
+    assert interpret(
+        parse(tokenize("var f(a, b) = { a * b }; f(1, 2)"))) == 2
+    # TODO: you should be able to change function values later! (should this be f(a,b) = new_value OR f = new_value?)
+    #interpret(
+    #    parse(tokenize("var f(a, b) = { a * b }; f(a, b) = { a + b }; f(1, 2)"))) == 3
+
+    assert interpret(
+        parse(tokenize("var f(a, b) = { a = 2; a + b }; f(1, 2)"))) == 4
+
+    # variable scope tests
+    assert interpret(
+        parse(tokenize("var f(a, b) = { a = 2 }; var a = 5; f(1, 2); a"))) == 5
+    assert interpret(
+        parse(tokenize("var f() = { outer = 2 }; var outer = 5; f(); outer"))) == 2
+
+    with pytest.raises(Exception):
+        interpret(parse(tokenize("var f() = 2")))
+    with pytest.raises(Exception):
+        interpret(parse(tokenize("var f() = f()")))
+
+    # TODO: functions can be assigned values other than Blocks once they have been created, fix later!
+    interpret(parse(tokenize("var f() = { true }; f = 2; f")))
