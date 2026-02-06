@@ -32,6 +32,9 @@ class SymTable:
                 "and": lambda a, b:  a and b,
                 "unary_not": lambda a: not a,
                 "while": lambda a, b:  a / b,
+                "print_int": lambda i: print(i + "\n"),
+                "print_bool": lambda b: print(str(b).lower() + "\n"),
+                # TODO: read_int
             }
         if parent:
             self.parent = parent
