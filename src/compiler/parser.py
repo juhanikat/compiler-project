@@ -147,10 +147,14 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         """Will return either a single Expresison (if there is only one top level expression), or a TopLevel otherwise."""
         expressions: list[my_ast.Expression] = []
         expressions.append(parse_expression(True))
+        returns_last = False
+
         while peek().text == ";":
             consume(";")
             if peek().type != TokenType.END:
                 expressions.append(parse_expression(True))
+                if peek().type == TokenType.END:
+                    returns_last = True
 
         if peek().type != TokenType.END:
             raise Exception(
@@ -158,7 +162,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
 
         if len(expressions) == 1:
             return expressions[0]
-        return my_ast.TopLevel(*expressions, source_loc=expressions[0].source_loc)
+        return my_ast.TopLevel(*expressions, returns_last=returns_last, source_loc=expressions[0].source_loc)
 
     def parse_conditional() -> my_ast.IfThenElse | my_ast.IfThen:
         if_token = consume("if")

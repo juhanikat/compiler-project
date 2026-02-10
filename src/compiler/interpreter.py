@@ -155,7 +155,11 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
         case my_ast.TopLevel():
             for i in range(len(node.expressions) - 1):
                 interpret(node.expressions[i], sym_table)
-            return interpret(node.expressions[-1], sym_table)
+            if node.returns_last:
+                return interpret(node.expressions[-1], sym_table)
+            else:
+                interpret(node.expressions[-1], sym_table)
+                return None
 
         case my_ast.Block():
             if len(node.expressions) == 0:

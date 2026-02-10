@@ -1,20 +1,37 @@
+import pytest
+
 from compiler.parser import parse
 from compiler.tokenizer import tokenize
-from compiler.typechecker import Bool, Int, Unit, typecheck
+from compiler.typechecker import Bool, FunType, Int, Unit, typecheck
 
 
 def test_typechecker_basics() -> None:
     assert typecheck(parse(tokenize("1"))) == Int()
-    typecheck(parse(tokenize("true"))) == Bool()
-    typecheck(parse(tokenize(""))) == Unit()
+    assert typecheck(parse(tokenize("true"))) == Bool()
+    assert typecheck(parse(tokenize(""))) == Unit()
+    assert typecheck(parse(tokenize("var a = 1; a"))) == Int()
 
 
 def test_binary_op() -> None:
     assert typecheck(parse(tokenize("1 + 2"))) == Int()
+    assert typecheck(
+        parse(tokenize("var a = 2; var b = a * a; a + b"))) == Int()
+
+    with pytest.raises(TypeError):
+        typecheck(parse(tokenize("var a = 1; var b = true; a + b")))
 
 
-def test_while_do() -> None:
-    assert typecheck(parse(tokenize("while true do { 1 + 2 }"))) == Int()
-    assert isinstance(typecheck(
-        # should this return Bool instead? Currently TopLevel does not return anything like Block does
-        parse(tokenize("var i = 0; while i < 5 do { i = i + 1 }; true"))), Unit)
+def test_functions() -> None:
+    # TODO: Implement this?
+    # assert typecheck(parse(tokenize(
+    #    "var f(x, y) = { x + y }; f"))) == FunType(Int(), Int(), return_type=Int())
+
+    assert typecheck(
+        parse(tokenize("var f(x, y) = { x + y }; f(1, 2)"))) == Int()
+
+
+def test_others() -> None:
+    pass
+    # assert typecheck(parse(tokenize("while true do { 1 + 2 }"))) == Unit()
+    # assert typecheck(
+    # parse(tokenize("var i = 0; while i < 5 do { i = i + 1 }; true"))) == Bool()

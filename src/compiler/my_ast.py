@@ -181,10 +181,12 @@ class Block(Expression):
 class TopLevel(Expression):
     """This is identical to a Block, except it does not start and end with brackets {}, and it doesn't have the returns_last flag."""
     expressions: Tuple[Expression, ...]
+    returns_last: bool
 
-    def __init__(self, *expressions: Expression, source_loc: SourceLocation | None = None) -> None:
+    def __init__(self, *expressions: Expression, returns_last: bool = False, source_loc: SourceLocation | None = None) -> None:
         super().__init__(source_loc=source_loc)
         self.expressions = expressions
+        self.returns_last = returns_last
 
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)

@@ -230,8 +230,7 @@ def test_variable_declaration() -> None:
                                 "=",
                                 Literal(2)),
                        Identifier("x"),
-                       returns_last=True)
-                 )
+                       returns_last=True), returns_last=True)
 
     with pytest.raises(Exception):
         parse(tokenize("var x = var y"))
@@ -322,16 +321,14 @@ def test_top_level_blocks() -> None:
                           Literal(1)),
                  BinaryOp(Identifier("b"),
                           "+",
-                          Literal(2))
-                 )
+                          Literal(2)), returns_last=True)
 
     assert parse(tokenize(" true; b = { x }")) == \
         TopLevel(Boolean(True),
                  BinaryOp(Identifier("b"),
                           "=",
                           Block(Identifier("x"), returns_last=True)
-                          )
-                 )
+                          ), returns_last=True)
 
     assert parse(tokenize("a = 1; b = { x = 2; x }; f(a);")) == \
         TopLevel(BinaryOp(Identifier("a"),
