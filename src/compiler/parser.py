@@ -1,7 +1,7 @@
 from typing import List
 
-from compiler import my_ast
-from compiler.tokenizer import SourceLocation, Token, TokenType
+from compiler import my_ast, my_types
+from compiler.tokenizer import Token, TokenType
 
 left_associative_binary_operators: List[List[str]] = [
     ["="],
@@ -41,7 +41,8 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         nonlocal last_consumed
         token = peek()
         if isinstance(expected, str) and token.text != expected:
-            raise Exception(f'{token.source_loc}: expected "{expected}"')
+            raise Exception(
+                f'{token.source_loc}: expected "{expected}", but got {token.text}')
         if isinstance(expected, list) and token.text not in expected:
             comma_separated = ", ".join([f'"{e}"' for e in expected])
             raise Exception(
@@ -147,10 +148,11 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         """Will return either a single Expresison (if there is only one top level expression), or a TopLevel otherwise."""
         expressions: list[my_ast.Expression] = []
         expressions.append(parse_expression(True))
-        returns_last = False
+        returns_last = True
 
         while peek().text == ";":
             consume(";")
+            returns_last = False
             if peek().type != TokenType.END:
                 expressions.append(parse_expression(True))
                 if peek().type == TokenType.END:
@@ -160,7 +162,8 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             raise Exception(
                 f'{peek().source_loc}: invalid token "{peek().text}"')
 
-        if len(expressions) == 1:
+        # if there is only a single expression that IS NOT FOLLOWED BY A SEMICOLON, only return the expression, else return a TopLevel
+        if len(expressions) == 1 and returns_last:
             return expressions[0]
         return my_ast.TopLevel(*expressions, returns_last=returns_last, source_loc=expressions[0].source_loc)
 
@@ -205,19 +208,36 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
 
     def parse_variable_declaration() -> my_ast.Variable:
         var_token = consume("var")
+        type: my_types.BasicType | None = None
+
         if peek().type == TokenType.IDENTIFIER:
             name = parse_identifier()
         else:
             raise Exception(
                 f'{peek().source_loc}: expected the name of the variable, but got "{peek().text}"')
 
+        if peek().text == ":":
+            # found typing information
+            consume(":")
+            match peek().text:
+                case "Int":
+                    type = my_types.Int()
+                case "Bool":
+                    type = my_types.Bool()
+                case "Unit":
+                    type = my_types.Unit()
+                case _:
+                    raise Exception(
+                        f"{peek().source_loc}: Expected Int, Bool or Unit as type, but got {peek().text}")
+            # consume the type token
+            consume()
         consume("=")
         value = parse_expression()
         if isinstance(name, my_ast.Function):
             if not isinstance(value, my_ast.Block):
                 raise Exception(f"Function value can only be a Block")
-            return my_ast.Variable(name, value, source_loc=var_token.source_loc)
-        return my_ast.Variable(name.name, value, source_loc=var_token.source_loc)
+            return my_ast.Variable(name, value, type=type, source_loc=var_token.source_loc)
+        return my_ast.Variable(name.name, value, type=type, source_loc=var_token.source_loc)
 
     def parse_while_do() -> my_ast.WhileDo:
         while_token = consume("while")

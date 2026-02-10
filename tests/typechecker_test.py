@@ -1,8 +1,9 @@
 import pytest
 
+from compiler.my_types import Bool, FunType, Int, Unit
 from compiler.parser import parse
 from compiler.tokenizer import tokenize
-from compiler.typechecker import Bool, FunType, Int, Unit, typecheck
+from compiler.typechecker import typecheck
 
 
 def test_typechecker_basics() -> None:

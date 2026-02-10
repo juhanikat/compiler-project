@@ -1,15 +1,18 @@
 from dataclasses import dataclass
 from typing import Any, Tuple
 
+from compiler.my_types import BasicType
 from compiler.tokenizer import SourceLocation
 
 
 @dataclass(init=False)
 class Expression:
     """Base class for AST nodes representing expressions."""
+    type: BasicType | None
     source_loc: SourceLocation | None
 
-    def __init__(self, *, source_loc: SourceLocation | None = None):
+    def __init__(self, *, type: BasicType | None = None, source_loc: SourceLocation | None = None):
+        self.type = type
         self.source_loc = source_loc
 
     def __eq__(self, value: Any) -> bool:
@@ -197,8 +200,8 @@ class Variable(Expression):
     name: str | Function
     value:  Expression
 
-    def __init__(self, name: str | Function, value: Expression, *, source_loc: SourceLocation | None = None):
-        super().__init__(source_loc=source_loc)
+    def __init__(self, name: str | Function, value: Expression, *, type: BasicType | None = None, source_loc: SourceLocation | None = None):
+        super().__init__(type=type, source_loc=source_loc)
         self.name = name
         self.value = value
 

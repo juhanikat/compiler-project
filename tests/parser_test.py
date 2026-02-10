@@ -3,6 +3,7 @@ import pytest
 from compiler.my_ast import (BinaryOp, Block, Boolean, Function, Identifier,
                              IfThen, IfThenElse, Literal, TopLevel, UnaryOp,
                              Variable, WhileDo)
+from compiler.my_types import Bool, FunType, Int, Unit
 from compiler.parser import parse
 from compiler.tokenizer import tokenize
 
@@ -313,7 +314,7 @@ def test_advanced_blocks() -> None:
 
 def test_top_level_blocks() -> None:
     assert parse(tokenize("a = 1;")) == \
-        BinaryOp(Identifier("a"), "=", Literal(1))
+        TopLevel(BinaryOp(Identifier("a"), "=", Literal(1)))
 
     assert parse(tokenize("a = 1; b + 2")) == \
         TopLevel(BinaryOp(Identifier("a"),
@@ -351,3 +352,23 @@ def test_top_level_blocks() -> None:
 def test_while_do() -> None:
     assert parse(tokenize("while x do f(x)")) == \
         WhileDo(Identifier("x"), Function("f", Identifier("x")))
+
+
+def test_typing() -> None:
+    assert parse(tokenize("var x: Int = 1")) == Variable(
+        "x", Literal(1), type=Int())
+    assert parse(tokenize("var x: Bool = true")) == Variable(
+        "x", Boolean(True), type=Bool())
+    assert parse(tokenize("var x: Bool = true; x")) == \
+        TopLevel(Variable("x",
+                          Boolean(
+                              True),
+                          type=Bool()),
+                 Identifier(
+            "x"),
+        returns_last=True)
+
+    with pytest.raises(Exception):
+        parse(tokenize("var x: ABC = true"))
+    with pytest.raises(Exception):
+        parse(tokenize("var x: bool = true"))

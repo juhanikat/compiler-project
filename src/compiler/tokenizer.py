@@ -67,7 +67,7 @@ def tokenize(source_code: str) -> list[Token]:
 
     # (, ), {, }, ,, ;
     punctuation_patterns = [
-        re.compile(r"\(|\)|\{|\}|\,|\;")
+        re.compile(r"\(|\)|\{|\}|\,|\;|:")
     ]
 
     def look_for_matches(source_code: str) -> Token | None:
