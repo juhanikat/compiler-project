@@ -32,7 +32,6 @@ def test_functions() -> None:
 
 
 def test_others() -> None:
-    pass
-    # assert typecheck(parse(tokenize("while true do { 1 + 2 }"))) == Unit()
-    # assert typecheck(
-    # parse(tokenize("var i = 0; while i < 5 do { i = i + 1 }; true"))) == Bool()
+    assert typecheck(parse(tokenize("while true do { 1 + 2 }"))) == Unit()
+    assert typecheck(
+        parse(tokenize("var i = 0; while i < 5 do { i = i + 1 }; true"))) == Bool()
