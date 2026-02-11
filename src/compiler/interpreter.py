@@ -1,60 +1,60 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, Self, Tuple
+from typing import Any, Callable, Dict, Generic, Iterable, Self, Tuple, TypeVar
 
 from compiler import my_ast
 from compiler.my_ast import Expression
 
 type Value = int | bool | None | Expression | Callable | Tuple[my_ast.Expression, ...]
+T = TypeVar("T")
+
+DEFAULT_LOCALS: Dict[str, Value] = {
+    "+": lambda a, b:  a + b,
+    "unary_-": lambda a: -a,
+    "*": lambda a, b:  a * b,
+    "/": lambda a, b:  a / b,
+    "%": lambda a, b:  a % b,
+    "<": lambda a, b:  a < b,
+    "<=": lambda a, b:  a <= b,
+    ">": lambda a, b:  a > b,
+    ">=": lambda a, b:  a >= b,
+    "==": lambda a, b:  a == b,
+    "!=": lambda a, b:  a != b,
+    "or": lambda a, b:  a or b,
+    "and": lambda a, b:  a and b,
+    "unary_not": lambda a: not a,
+    "while": lambda a, b:  a / b,
+    "print_int": lambda i: print(i + "\n"),
+    "print_bool": lambda b: print(str(b).lower() + "\n"),
+    # TODO: read_int
+}
 
 
 @dataclass(init=False)
-class SymTable:
-    locals: Dict[str, Value]
+class SymTable(Generic[T]):
+    locals: Dict[str, T]
     parent: Self | None
 
-    def __init__(self, locals: Dict[str, Value] | None = None, parent: Self | None = None) -> None:
-        if locals:
-            self.locals = locals
-        else:
-            self.locals = {
-                "+": lambda a, b:  a + b,
-                "unary_-": lambda a: -a,
-                "*": lambda a, b:  a * b,
-                "/": lambda a, b:  a / b,
-                "%": lambda a, b:  a % b,
-                "<": lambda a, b:  a < b,
-                "<=": lambda a, b:  a <= b,
-                ">": lambda a, b:  a > b,
-                ">=": lambda a, b:  a >= b,
-                "==": lambda a, b:  a == b,
-                "!=": lambda a, b:  a != b,
-                "or": lambda a, b:  a or b,
-                "and": lambda a, b:  a and b,
-                "unary_not": lambda a: not a,
-                "while": lambda a, b:  a / b,
-                "print_int": lambda i: print(i + "\n"),
-                "print_bool": lambda b: print(str(b).lower() + "\n"),
-                # TODO: read_int
-            }
-        if parent:
-            self.parent = parent
-        else:
+    def __init__(self, locals: Dict[str, T], parent: Self | None = None) -> None:
+        self.locals = locals
+        if parent is None:
             self.parent = None
+        else:
+            self.parent = parent
 
-    def add(self, name: str, value: Value) -> None:
+    def add(self, name: str, value: T) -> None:
         if name in self.locals:
             raise Exception(f"Variable {name} was already in the symbol table")
         self.locals[name] = value
         return None
 
-    def lookup(self, name: str) -> Value:
+    def lookup(self, name: str) -> T | None:
         if name in self.locals:
             return self.locals.get(name)
         elif self.parent:
             return self.parent.lookup(name)
         return None
 
-    def change(self, name: str, new_value: Value) -> None:
+    def change(self, name: str, new_value: T) -> None:
         if not name in self.locals:
             if self.parent is None:
                 raise Exception(f"{name} does not exist in the symbol table")
@@ -67,7 +67,7 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
     if node is None:
         return None
     if sym_table is None:
-        sym_table = SymTable()
+        sym_table = SymTable[Value](locals=DEFAULT_LOCALS.copy(), parent=None)
 
     match node:
         case my_ast.Literal():
@@ -164,7 +164,8 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
         case my_ast.Block():
             if len(node.expressions) == 0:
                 return None
-            block_sym_table = SymTable(locals=None, parent=sym_table)
+            block_sym_table = SymTable[Value](
+                locals=DEFAULT_LOCALS.copy(), parent=sym_table)
             for i in range(len(node.expressions) - 1):
                 interpret(node.expressions[i], block_sym_table)
             if node.returns_last:
@@ -190,7 +191,8 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
                     f"{func_block} is not a Block")
 
             given_args = node.params
-            func_sym_table = SymTable(locals=None, parent=sym_table)
+            func_sym_table = SymTable[Value](
+                locals=DEFAULT_LOCALS.copy(), parent=sym_table)
             for func_arg, given_arg in zip(func_params, given_args):
                 if not isinstance(func_arg, my_ast.Identifier):
                     raise Exception
