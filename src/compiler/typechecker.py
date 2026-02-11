@@ -54,6 +54,7 @@ class TypeTable:
 
 
 def typecheck(node: my_ast.Expression | None) -> Type:
+    """Uses get_type() to get the type of the node, then sets node.type to that type and returns the type."""
 
     def get_type(node: my_ast.Expression, type_table: TypeTable) -> Type:
         match node:
