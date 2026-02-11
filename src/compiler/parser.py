@@ -36,7 +36,8 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             )
 
     def consume(expected: str | list[str] | None = None) -> Token:
-        """Same as peek(), but also moves to the next Token on the list (= increases pos by 1)."""
+        """Same as peek(), but also moves to the next Token on the list (= increases pos by 1).
+        If <expected> is given, the next token has to match the given string/list, otherwise this will throw an error."""
         nonlocal pos
         nonlocal last_consumed
         token = peek()
@@ -207,18 +208,8 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             f'{peek().source_loc}: expected "not" or "-", but got "{peek().text}"')
 
     def parse_variable_declaration() -> my_ast.Variable:
-        var_token = consume("var")
-        type: my_types.BasicType | None = None
-
-        if peek().type == TokenType.IDENTIFIER:
-            name = parse_identifier()
-        else:
-            raise Exception(
-                f'{peek().source_loc}: expected the name of the variable, but got "{peek().text}"')
-
-        if peek().text == ":":
-            # found typing information
-            consume(":")
+        def parse_type() -> my_types.BasicType:
+            type: my_types.BasicType | None = None
             match peek().text:
                 case "Int":
                     type = my_types.Int()
@@ -230,14 +221,46 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
                     raise Exception(
                         f"{peek().source_loc}: Expected Int, Bool or Unit as type, but got {peek().text}")
             # consume the type token
-            consume()
+            consume(["Int", "Bool", "Unit"])
+            return type
+
+        var_token = consume("var")
+        var_type: my_types.MyType | None = None
+
+        if peek().type == TokenType.IDENTIFIER:
+            name = parse_identifier()
+        else:
+            raise Exception(
+                f'{peek().source_loc}: expected the name of the variable, but got "{peek().text}"')
+
+        if peek().text == ":":
+            # found typing information
+            consume(":")
+            if peek().text == "(":
+                # found function typing information
+                consume("(")
+                param_types = []
+                first_type = parse_type()
+                param_types.append(first_type)
+                while peek().text == ",":
+                    consume(",")
+                    param_type = parse_type()
+                    param_types.append(param_type)
+                consume(")")
+                consume("=>")  # might not work due to =
+                return_type = parse_type()
+                var_type = my_types.FunType(
+                    *param_types, return_type=return_type)
+            else:
+                var_type = parse_type()
+
         consume("=")
         value = parse_expression()
         if isinstance(name, my_ast.Function):
             if not isinstance(value, my_ast.Block):
                 raise Exception(f"Function value can only be a Block")
-            return my_ast.Variable(name, value, type=type, source_loc=var_token.source_loc)
-        return my_ast.Variable(name.name, value, type=type, source_loc=var_token.source_loc)
+            return my_ast.Variable(name, value, type=var_type, source_loc=var_token.source_loc)
+        return my_ast.Variable(name.name, value, type=var_type, source_loc=var_token.source_loc)
 
     def parse_while_do() -> my_ast.WhileDo:
         while_token = consume("while")

@@ -368,7 +368,44 @@ def test_typing() -> None:
             "x"),
         returns_last=True)
 
+    assert parse(
+        tokenize("var f(a, b): (Bool, Bool) => Bool = { a or b };")) == \
+        TopLevel(Variable(Function("f",
+                                   Identifier("a"),
+                                   Identifier("b")
+                                   ),
+                          Block(BinaryOp(Identifier("a"),
+                                         "or",
+                                         Identifier("b")),
+                                returns_last=True),
+                          type=FunType(Bool(),
+                                       Bool(),
+                                       return_type=Bool())
+                          ))
+
+    assert parse(
+        tokenize("var f(a): (Bool) => Unit = { not a };")) == \
+        TopLevel(Variable(Function("f",
+                                   Identifier("a"),
+                                   ),
+                          Block(UnaryOp("not",
+                                        Identifier("a")),
+                                returns_last=True),
+                          type=FunType(Bool(), return_type=Unit()),
+                          )
+                 )
+
+    # TODO: make this work!
+    # parse(tokenize("{ var f: (Int) => Unit = print_int; f(123) }"))
+
     with pytest.raises(Exception):
         parse(tokenize("var x: ABC = true"))
     with pytest.raises(Exception):
         parse(tokenize("var x: bool = true"))
+
+    with pytest.raises(Exception):
+        # TODO: should probably allow functions without arguments
+        parse(tokenize("var f(x): () => Int = { 2 * 2 }"))
+    with pytest.raises(Exception):
+        # no return type
+        parse(tokenize("var f(x): (Int) = { x * 2 }"))

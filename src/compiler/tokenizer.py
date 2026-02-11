@@ -60,14 +60,14 @@ def tokenize(source_code: str) -> list[Token]:
         re.compile(r"\n"),
         re.compile(r"#.*")  # Comments
     ]
-    # +, -, *, /, %, =, ==, !=, <, <=, >, >=
-    operator_patterns = [
-        re.compile(r"==|!=|<=|>=|\<|\>|\+|\-|\*|\/|\%|\=")
-    ]
 
     # (, ), {, }, ,, ;
     punctuation_patterns = [
-        re.compile(r"\(|\)|\{|\}|\,|\;|:")
+        re.compile(r"\(|\)|\{|\}|\,|\;|:|=>")
+    ]
+    # +, -, *, /, %, =, ==, !=, <, <=, >, >=
+    operator_patterns = [
+        re.compile(r"==|!=|<=|>=|\<|\>|\+|\-|\*|\/|\%|\=")
     ]
 
     def look_for_matches(source_code: str) -> Token | None:
@@ -81,6 +81,12 @@ def tokenize(source_code: str) -> list[Token]:
             if match:
                 return Token(match.group(
                 ), TokenType.IDENTIFIER, SourceLocation(line, column))
+        # this is before the operator loop because of =>
+        for punctuation_pattern in punctuation_patterns:
+            match = re.match(punctuation_pattern, source_code)
+            if match:
+                return Token(match.group(
+                ), TokenType.PUNCTUATION, SourceLocation(line, column))
         for operator_pattern in operator_patterns:
             match = re.match(operator_pattern, source_code)
             if match:
@@ -92,11 +98,7 @@ def tokenize(source_code: str) -> list[Token]:
             if match:
                 return Token(match.group(
                 ), TokenType.OTHER, SourceLocation(line, column))
-        for punctuation_pattern in punctuation_patterns:
-            match = re.match(punctuation_pattern, source_code)
-            if match:
-                return Token(match.group(
-                ), TokenType.PUNCTUATION, SourceLocation(line, column))
+
         return None
 
     line = 1

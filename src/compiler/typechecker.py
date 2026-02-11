@@ -101,7 +101,7 @@ def typecheck(node: my_ast.Expression | None, type_table: TypeTable | None = Non
 
                 params: List[Int] = []
                 for param in node.name.params:
-                    # NOTE: All params are assumed to be Ints
+                    # NOTE: All params are assumed to be Ints, fix!
                     if not isinstance(param, my_ast.Identifier):
                         raise Exception(
                             "Function has a parameter that is not an Identifier")

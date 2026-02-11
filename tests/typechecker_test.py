@@ -23,12 +23,14 @@ def test_binary_op() -> None:
 
 
 def test_functions() -> None:
-    # TODO: Implement this?
-    # assert typecheck(parse(tokenize(
-    #    "var f(x, y) = { x + y }; f"))) == FunType(Int(), Int(), return_type=Int())
+    assert typecheck(parse(tokenize(
+        "var f(x, y) = { x + y }; f"))) == FunType(Int(), Int(), return_type=Int())
 
     assert typecheck(
         parse(tokenize("var f(x, y) = { x + y }; f(1, 2)"))) == Int()
+
+    #parse(
+    #    tokenize("var f(a, b): (Bool, Bool) => Bool = { a or b }; f"))
 
 
 def test_others() -> None:

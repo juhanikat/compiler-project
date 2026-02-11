@@ -37,9 +37,6 @@ class FunType:
     type_args: Tuple[MyType, ...]
     return_type: MyType
 
-    def __eq__(self, value: Any) -> bool:
-        return self.__class__ == value.__class__
-
     def __init__(self, *type_args: MyType, return_type: MyType):
         self.type_args = type_args
         self.return_type = return_type
