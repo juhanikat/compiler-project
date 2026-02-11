@@ -1,19 +1,15 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Tuple
 
-from compiler.my_types import BasicType, Type
+from compiler.my_types import Type, Unit
 from compiler.tokenizer import SourceLocation
 
 
-@dataclass(init=False)
+@dataclass
 class Expression:
     """Base class for AST nodes representing expressions."""
-    type: Type | None
-    source_loc: SourceLocation | None
-
-    def __init__(self, *, type: Type | None = None, source_loc: SourceLocation | None = None):
-        self.type = type
-        self.source_loc = source_loc
+    type: Type | Unit = field(kw_only=True, default_factory=lambda: Unit())
+    source_loc: SourceLocation | None = field(kw_only=True, default=None)
 
     def __eq__(self, value: Any) -> bool:
         if not isinstance(value, Expression):
@@ -28,13 +24,9 @@ class Expression:
         return True
 
 
-@dataclass(init=False)
+@dataclass
 class Literal(Expression):
     value: int | bool | None
-
-    def __init__(self, value: int | bool | None, *, source_loc: SourceLocation | None = None) -> None:
-        super().__init__(source_loc=source_loc)
-        self.value = value
 
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
@@ -43,13 +35,9 @@ class Literal(Expression):
         return f"Literal({self.value}) at loc {self.source_loc}"
 
 
-@dataclass(init=False)
+@dataclass
 class Identifier(Expression):
     name: str
-
-    def __init__(self, name: str, *, source_loc: SourceLocation | None = None) -> None:
-        super().__init__(source_loc=source_loc)
-        self.name = name
 
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
@@ -58,13 +46,9 @@ class Identifier(Expression):
         return f"Identifier({self.name}) at loc {self.source_loc}"
 
 
-@dataclass(init=False)
+@dataclass
 class Boolean(Expression):
     value: bool
-
-    def __init__(self, value: bool, *, source_loc: SourceLocation | None = None) -> None:
-        super().__init__(source_loc=source_loc)
-        self.value = value
 
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
@@ -73,79 +57,52 @@ class Boolean(Expression):
         return f"Boolean({self.value}) at loc {self.source_loc}"
 
 
-@dataclass(init=False)
+@dataclass
 class BinaryOp(Expression):
     """AST node for a binary operation like `A + B`"""
     left: Expression
     op: str
     right: Expression
 
-    def __init__(self, left: Expression, op: str, right: Expression, *, source_loc: SourceLocation | None = None):
-        super().__init__(source_loc=source_loc)
-        self.left = left
-        self.op = op
-        self.right = right
-
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
 
 
-@dataclass(init=False)
+@dataclass
 class UnaryOp(Expression):
     """AST node for an unary operation like `not A`"""
     op: str
     target: Expression
 
-    def __init__(self, op: str, target: Expression, *, source_loc: SourceLocation | None = None):
-        super().__init__(source_loc=source_loc)
-        self.op = op
-        self.target = target
-
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
 
 
-@dataclass(init=False)
+@dataclass
 class IfThen(Expression):
     """AST node for an if then conditional structure (without else)"""
     if_expr: Expression
     then_expr: Expression
 
-    def __init__(self, if_expr: Expression, then_expr: Expression, *, source_loc: SourceLocation | None = None):
-        super().__init__(source_loc=source_loc)
-        self.if_expr = if_expr
-        self.then_expr = then_expr
-
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
 
 
-@dataclass(init=False)
+@dataclass
 class IfThenElse(Expression):
     """AST node for an if then else conditional structure"""
     if_expr: Expression
     then_expr: Expression
     else_expr: Expression
 
-    def __init__(self, if_expr: Expression, then_expr: Expression, else_expr: Expression, *, source_loc: SourceLocation | None = None):
-        super().__init__(source_loc=source_loc)
-        self.if_expr = if_expr
-        self.then_expr = then_expr
-        self.else_expr = else_expr
-
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
 
 
-@dataclass(init=False)
+@dataclass
 class WhileDo(Expression):
     condition: Expression
     do_expr: Expression
-
-    def __init__(self, condition: Expression, do_expr: Expression, source_loc: SourceLocation | None = None) -> None:
-        super().__init__(source_loc=source_loc)
-        self.condition = condition
-        self.do_expr = do_expr
 
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
@@ -168,7 +125,6 @@ class Function(Expression):
 @dataclass(init=False)
 class Block(Expression):
     expressions: Tuple[Expression, ...]
-    # set to True if the last expression inside the block does not end with a semicolon
     returns_last: bool
 
     def __init__(self, *expressions: Expression, returns_last: bool = False, source_loc: SourceLocation | None = None) -> None:
@@ -186,7 +142,7 @@ class TopLevel(Expression):
     expressions: Tuple[Expression, ...]
     returns_last: bool
 
-    def __init__(self, *expressions: Expression, returns_last: bool = False, source_loc: SourceLocation | None = None) -> None:
+    def __init__(self, *expressions: Expression, returns_last: bool = False, source_loc: SourceLocation | None = None):
         super().__init__(source_loc=source_loc)
         self.expressions = expressions
         self.returns_last = returns_last
@@ -195,15 +151,10 @@ class TopLevel(Expression):
         return super().__eq__(value)
 
 
-@dataclass(init=False)
+@dataclass
 class Variable(Expression):
     name: str | Function
     value:  Expression
-
-    def __init__(self, name: str | Function, value: Expression, *, type: Type | None = None, source_loc: SourceLocation | None = None):
-        super().__init__(type=type, source_loc=source_loc)
-        self.name = name
-        self.value = value
 
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)

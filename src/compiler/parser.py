@@ -259,8 +259,12 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
         if isinstance(name, my_ast.Function):
             if not isinstance(value, my_ast.Block):
                 raise Exception(f"Function value can only be a Block")
-            return my_ast.Variable(name, value, type=var_type, source_loc=var_token.source_loc)
-        return my_ast.Variable(name.name, value, type=var_type, source_loc=var_token.source_loc)
+            if var_type:
+                return my_ast.Variable(name, value, type=var_type, source_loc=var_token.source_loc)
+            return my_ast.Variable(name, value, source_loc=var_token.source_loc)
+        if var_type:
+            return my_ast.Variable(name.name, value, type=var_type, source_loc=var_token.source_loc)
+        return my_ast.Variable(name.name, value, source_loc=var_token.source_loc)
 
     def parse_while_do() -> my_ast.WhileDo:
         while_token = consume("while")

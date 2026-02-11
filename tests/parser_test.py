@@ -364,9 +364,8 @@ def test_typing() -> None:
                           Boolean(
                               True),
                           type=Bool()),
-                 Identifier(
-            "x"),
-        returns_last=True)
+                 Identifier("x"),
+                 returns_last=True)
 
     assert parse(
         tokenize("var f(a, b): (Bool, Bool) => Bool = { a or b };")) == \
