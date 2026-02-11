@@ -2,90 +2,11 @@ import dataclasses
 from dataclasses import dataclass
 from typing import Any, Dict
 
-from compiler import my_ast
+from compiler import my_ast, my_ir
 from compiler.interpreter import DEFAULT_LOCALS, SymTable, Value
 from compiler.my_types import Bool, Int, Unit
 from compiler.parser import parse
 from compiler.tokenizer import SourceLocation, tokenize
-
-
-@dataclass(frozen=True)
-class IRVar:
-    """Represents the name of a memory location or built-in."""
-    name: str
-
-    def __str__(self) -> str:
-        return self.name
-
-
-@dataclass(frozen=True)
-class Instruction():
-    """Base class for IR instructions."""
-    location: SourceLocation
-
-    def __str__(self) -> str:
-        """Returns a string representation similar to
-        our IR code examples, e.g. 'LoadIntConst(3, x1)'"""
-        def format_value(v: Any) -> str:
-            if isinstance(v, list):
-                return f'[{", ".join(format_value(e) for e in v)}]'
-            else:
-                return str(v)
-        args = ', '.join(
-            format_value(getattr(self, field.name))
-            for field in dataclasses.fields(self)
-            if field.name != 'location'
-        )
-        return f'{type(self).__name__}({args})'
-
-
-@dataclass(frozen=True)
-class Label(Instruction):
-    """Marks the destination of a jump instruction."""
-    name: str
-
-
-@dataclass(frozen=True)
-class LoadBoolConst(Instruction):
-    """Loads a boolean constant value to `dest`."""
-    value: bool
-    dest: IRVar
-
-
-@dataclass(frozen=True)
-class LoadIntConst(Instruction):
-    """Loads a constant value to `dest`."""
-    value: int
-    dest: IRVar
-
-
-@dataclass(frozen=True)
-class Copy(Instruction):
-    """Copies a value from one variable to another."""
-    source: IRVar
-    dest: IRVar
-
-
-@dataclass(frozen=True)
-class Call(Instruction):
-    """Calls a function or built-in."""
-    fun: IRVar
-    args: list[IRVar]
-    dest: IRVar
-
-
-@dataclass(frozen=True)
-class Jump(Instruction):
-    """Unconditionally continues execution from the given label."""
-    label: Label
-
-
-@dataclass(frozen=True)
-class CondJump(Instruction):
-    """Continues execution from `then_label` if `cond` is true, otherwise from `else_label`."""
-    cond: IRVar
-    then_label: Label
-    else_label: Label
 
 
 def generate_ir(
@@ -94,20 +15,20 @@ def generate_ir(
     # the global symbol table of your interpreter or type checker.
     reserved_names: set[str],
     root_expr: my_ast.Expression
-) -> list[Instruction]:
+) -> list[my_ir.Instruction]:
     # 'var_unit' is used when an expression's type is 'Unit'.
-    var_unit = IRVar('unit')
+    var_unit = my_ir.IRVar('unit')
 
-    def new_var() -> IRVar:
+    def new_var() -> my_ir.IRVar:
         for i in range(100):
             if f"v{i}" not in reserved_names:
                 reserved_names.add(f"v{i}")
-                return IRVar(f"v{i}")
+                return my_ir.IRVar(f"v{i}")
         raise Exception("Ran out of variables!")
 
     # We collect the IR instructions that we generate
     # into this list.
-    ins: list[Instruction] = []
+    ins: list[my_ir.Instruction] = []
 
     # This function visits an AST node,
     # appends IR instructions to 'ins',
@@ -118,7 +39,7 @@ def generate_ir(
     # (which may be shadowed) to unique IR variables.
     # The symbol table will be updated in the same way as
     # in the interpreter and type checker.
-    def visit(sym_table: SymTable[IRVar], expr: my_ast.Expression) -> IRVar:
+    def visit(sym_table: SymTable[my_ir.IRVar], expr: my_ast.Expression) -> my_ir.IRVar:
         loc = expr.source_loc
         if not loc:
             raise Exception("Missing SourceLocation")
@@ -131,11 +52,11 @@ def generate_ir(
                 match expr.value:
                     case bool():
                         var = new_var()
-                        ins.append(LoadBoolConst(
+                        ins.append(my_ir.LoadBoolConst(
                             loc, expr.value, var))
                     case int():
                         var = new_var()
-                        ins.append(LoadIntConst(
+                        ins.append(my_ir.LoadIntConst(
                             loc, expr.value, var))
                     case None:
                         var = var_unit
@@ -167,7 +88,7 @@ def generate_ir(
                 # Generate variable to hold the result.
                 var_result = new_var()
                 # Emit a Call instruction that writes to that variable.
-                ins.append(Call(
+                ins.append(my_ir.Call(
                     loc, var_op, [var_left, var_right], var_result))
                 return var_result
 
@@ -181,9 +102,9 @@ def generate_ir(
     # they just need to exist so the variable lookups work,
     # and clashing variable names can be avoided.
 
-    root_symtab = SymTable[IRVar](locals={}, parent=None)
+    root_symtab = SymTable[my_ir.IRVar](locals={}, parent=None)
     for name in reserved_names:
-        root_symtab.add(name, IRVar(name))
+        root_symtab.add(name, my_ir.IRVar(name))
 
     # Start visiting the AST from the root.
     var_final_result = visit(root_symtab, root_expr)
