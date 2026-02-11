@@ -58,6 +58,8 @@ def typecheck(node: my_ast.Expression | None) -> Type:
 
     def get_type(node: my_ast.Expression, type_table: TypeTable) -> Type:
         match node:
+            case my_ast.EmptyExpression():
+                return Unit()
             case my_ast.Literal():
                 if isinstance(node.value, bool) and not isinstance(node.value, int):
                     return Bool()

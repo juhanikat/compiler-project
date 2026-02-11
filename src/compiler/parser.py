@@ -15,10 +15,10 @@ left_associative_binary_operators: List[List[str]] = [
 ]
 
 
-def parse(tokens: list[Token]) -> my_ast.Expression | None:
+def parse(tokens: list[Token]) -> my_ast.Expression:
     """Returns an Expression parsed from a list of tokens, or None if if the list is empty."""
     if len(tokens) == 0:
-        return None
+        return my_ast.EmptyExpression()
 
     pos = 0
     # saves the last consumed Token, used when parsing blocks and semicolons

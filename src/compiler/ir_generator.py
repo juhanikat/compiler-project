@@ -13,9 +13,11 @@ def generate_ir(
     # 'reserved_names' should contain all global names
     # like 'print_int' and '+'. You can get them from
     # the global symbol table of your interpreter or type checker.
-    reserved_names: set[str],
+    reserved_names: set[str] | None,
     root_expr: my_ast.Expression
 ) -> list[my_ir.Instruction]:
+    if reserved_names is None:
+        reserved_names = set(DEFAULT_LOCALS.copy().keys())
     # 'var_unit' is used when an expression's type is 'Unit'.
     var_unit = my_ir.IRVar('unit')
 
@@ -53,11 +55,11 @@ def generate_ir(
                     case bool():
                         var = new_var()
                         ins.append(my_ir.LoadBoolConst(
-                            loc, expr.value, var))
+                            expr.value, var, loc=loc))
                     case int():
                         var = new_var()
                         ins.append(my_ir.LoadIntConst(
-                            loc, expr.value, var))
+                            expr.value, var, loc=loc))
                     case None:
                         var = var_unit
                     case _:
@@ -89,7 +91,7 @@ def generate_ir(
                 var_result = new_var()
                 # Emit a Call instruction that writes to that variable.
                 ins.append(my_ir.Call(
-                    loc, var_op, [var_left, var_right], var_result))
+                    var_op, [var_left, var_right], var_result, loc=loc))
                 return var_result
 
             case _:
@@ -121,6 +123,4 @@ def generate_ir(
 
 reserved_names = set(DEFAULT_LOCALS.copy().keys())
 root_expr = parse(tokenize("1 + 2 * 3"))
-if root_expr is None:
-    raise Exception
 print(generate_ir(reserved_names, root_expr))

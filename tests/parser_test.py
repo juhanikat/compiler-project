@@ -1,8 +1,8 @@
 import pytest
 
-from compiler.my_ast import (BinaryOp, Block, Boolean, Function, Identifier,
-                             IfThen, IfThenElse, Literal, TopLevel, UnaryOp,
-                             Variable, WhileDo)
+from compiler.my_ast import (BinaryOp, Block, Boolean, EmptyExpression,
+                             Function, Identifier, IfThen, IfThenElse, Literal,
+                             TopLevel, UnaryOp, Variable, WhileDo)
 from compiler.my_types import Bool, FunType, Int, Unit
 from compiler.parser import parse
 from compiler.tokenizer import tokenize
@@ -46,7 +46,7 @@ def test_parentheses() -> None:
 
 
 def test_empty_input() -> None:
-    assert parse(tokenize("")) is None
+    assert parse(tokenize("")) == EmptyExpression()
 
 
 def test_garbage_at_end() -> None:

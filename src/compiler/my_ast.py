@@ -25,6 +25,11 @@ class Expression:
 
 
 @dataclass
+class EmptyExpression(Expression):
+    """Used when the input for parse() is empty."""
+
+
+@dataclass
 class Literal(Expression):
     value: int | bool | None
 
