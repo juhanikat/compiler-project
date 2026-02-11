@@ -53,130 +53,134 @@ class TypeTable:
         return None
 
 
-def typecheck(node: my_ast.Expression | None, type_table: TypeTable | None = None) -> Type:
+def typecheck(node: my_ast.Expression | None) -> Type:
+
+    def get_type(node: my_ast.Expression, type_table: TypeTable) -> Type:
+        match node:
+            case my_ast.Literal():
+                if isinstance(node.value, bool) and not isinstance(node.value, int):
+                    return Bool()
+                elif isinstance(node.value, int):
+                    return Int()
+                elif isinstance(node.value, NoneType):
+                    return Unit()
+                else:
+                    raise TypeError(
+                        f"{node.value} is not an integer, a boolean or NoneType")
+
+            case my_ast.Identifier():
+                value = type_table.lookup(node.name)
+                if not value:
+                    raise Exception(
+                        f"'{node.name}' does not exist in the type table")
+                return value
+
+            case my_ast.Function():
+                value = type_table.lookup(node.name)
+                if not isinstance(value, FunType):
+                    raise Exception(
+                        f"TypeTable has function {node.name}, but its value is not a FunType!")
+                return value.return_type
+
+            case my_ast.Boolean():
+                # TODO: should probably remove my_ast.Boolean entirely since Literal can already be bool?
+                if isinstance(node.value, bool):
+                    return Bool()
+                else:
+                    raise TypeError(
+                        f"{node.value} is not a boolean")
+
+            case my_ast.Variable():
+                if isinstance(node.name, my_ast.Function):
+                    if not isinstance(node.value, my_ast.Block):
+                        raise Exception(
+                            "The value of a Function Variable was not a Block!")
+
+                    params: List[Int] = []
+                    for param in node.name.params:
+                        # NOTE: All params are assumed to be Ints, fix!
+                        if not isinstance(param, my_ast.Identifier):
+                            raise Exception(
+                                "Function has a parameter that is not an Identifier")
+
+                        type_table.add(param.name, Int())
+                        params.append(Int())
+
+                    value_type = get_type(node.value, type_table)
+                    if not isinstance(value_type, FunType):
+                        raise Exception(
+                            "Function's value type was not a FunType")
+
+                    type_table.add(node.name.name, FunType(
+                        *params, return_type=value_type.return_type))
+                else:
+                    value_type = get_type(node.value, type_table)
+                    type_table.add(node.name, value_type)
+                return Unit()
+
+            case my_ast.BinaryOp():
+                left_type = get_type(node.left, type_table)
+                right_type = get_type(node.right, type_table)
+
+                if node.op == "==":
+                    if left_type != right_type:
+                        raise TypeError()
+                if node.op == "!=":
+                    if left_type != right_type:
+                        raise TypeError()
+                else:
+                    fun_type = type_table.lookup(node.op)
+
+                    if not isinstance(fun_type, FunType):
+                        raise Exception(
+                            f"'{node.op}' does not have a matching type in the TypeTable")
+                    if left_type.__class__ != fun_type.type_args[0].__class__:
+                        raise TypeError(
+                            f"Expected argument 1 to be {fun_type.type_args[0]}, but got {left_type}")
+                    if right_type.__class__ != fun_type.type_args[1].__class__:
+                        raise TypeError(
+                            f"Expected argument 2 to be {fun_type.type_args[1]}, but got {right_type}")
+                    return fun_type.return_type
+
+            case my_ast.IfThenElse():
+                t1 = get_type(node.if_expr, type_table)
+                if not isinstance(t1, Bool):
+                    raise Exception()
+                t2 = get_type(node.then_expr, type_table)
+                t3 = get_type(node.else_expr, type_table)
+                if t2 != t3:
+                    raise Exception()
+                return t2  # or t3, they are the same type
+
+            case my_ast.WhileDo():
+                return Unit()
+
+            case my_ast.Block():
+                block_type_table = TypeTable(locals=None, parent=type_table)
+                block_exprs: List[Type] = []
+                for expr in node.expressions:
+                    t = get_type(expr, block_type_table)
+                    block_exprs.append(t)
+
+                if node.returns_last:
+                    return_type = block_exprs[-1]
+                    return FunType(*block_exprs, return_type=return_type)
+                return FunType(*block_exprs, return_type=Unit())
+
+            case my_ast.TopLevel():
+                top_exprs: List[Type] = []
+                for expr in node.expressions:
+                    t = get_type(expr, type_table)
+                    top_exprs.append(t)
+
+                if node.returns_last:
+                    return top_exprs[-1]
+                return Unit()
+
+        raise Exception("No match")
+
     if node is None:
         return Unit()
-    if type_table is None:
-        type_table = TypeTable()
-
-    match node:
-        case my_ast.Literal():
-            if isinstance(node.value, bool) and not isinstance(node.value, int):
-                return Bool()
-            elif isinstance(node.value, int):
-                return Int()
-            elif isinstance(node.value, NoneType):
-                return Unit()
-            else:
-                raise TypeError(
-                    f"{node.value} is not an integer, a boolean or NoneType")
-
-        case my_ast.Identifier():
-            value = type_table.lookup(node.name)
-            if not value:
-                raise Exception(
-                    f"'{node.name}' does not exist in the type table")
-            return value
-
-        case my_ast.Function():
-            value = type_table.lookup(node.name)
-            if not isinstance(value, FunType):
-                raise Exception(
-                    f"TypeTable has function {node.name}, but its value is not a FunType!")
-            return value.return_type
-
-        case my_ast.Boolean():
-            # TODO: should probably remove my_ast.Boolean entirely since Literal can already be bool?
-            if isinstance(node.value, bool):
-                return Bool()
-            else:
-                raise TypeError(
-                    f"{node.value} is not a boolean")
-
-        case my_ast.Variable():
-            if isinstance(node.name, my_ast.Function):
-                if not isinstance(node.value, my_ast.Block):
-                    raise Exception(
-                        "The value of a Function Variable was not a Block!")
-
-                params: List[Int] = []
-                for param in node.name.params:
-                    # NOTE: All params are assumed to be Ints, fix!
-                    if not isinstance(param, my_ast.Identifier):
-                        raise Exception(
-                            "Function has a parameter that is not an Identifier")
-
-                    type_table.add(param.name, Int())
-                    params.append(Int())
-
-                value_type = typecheck(node.value, type_table)
-                if not isinstance(value_type, FunType):
-                    raise Exception("Function's value type was not a FunType")
-
-                type_table.add(node.name.name, FunType(
-                    *params, return_type=value_type.return_type))
-            else:
-                value_type = typecheck(node.value, type_table)
-                type_table.add(node.name, value_type)
-            return Unit()
-
-        case my_ast.BinaryOp():
-            left_type = typecheck(node.left, type_table)
-            right_type = typecheck(node.right, type_table)
-
-            if node.op == "==":
-                if left_type != right_type:
-                    raise TypeError()
-            if node.op == "!=":
-                if left_type != right_type:
-                    raise TypeError()
-            else:
-                fun_type = type_table.lookup(node.op)
-
-                if not isinstance(fun_type, FunType):
-                    raise Exception(
-                        f"'{node.op}' does not have a matching type in the TypeTable")
-                if left_type.__class__ != fun_type.type_args[0].__class__:
-                    raise TypeError(
-                        f"Expected argument 1 to be {fun_type.type_args[0]}, but got {left_type}")
-                if right_type.__class__ != fun_type.type_args[1].__class__:
-                    raise TypeError(
-                        f"Expected argument 2 to be {fun_type.type_args[1]}, but got {right_type}")
-                return fun_type.return_type
-
-        case my_ast.IfThenElse():
-            t1 = typecheck(node.if_expr)
-            if not isinstance(t1, Bool):
-                raise Exception()
-            t2 = typecheck(node.then_expr)
-            t3 = typecheck(node.else_expr)
-            if t2 != t3:
-                raise Exception()
-            return t2  # or t3, they are the same type
-
-        case my_ast.WhileDo():
-            return Unit()
-
-        case my_ast.Block():
-            block_type_table = TypeTable(locals=None, parent=type_table)
-            block_exprs: List[Type] = []
-            for expr in node.expressions:
-                t = typecheck(expr, block_type_table)
-                block_exprs.append(t)
-
-            if node.returns_last:
-                return_type = block_exprs[-1]
-                return FunType(*block_exprs, return_type=return_type)
-            return FunType(*block_exprs, return_type=Unit())
-
-        case my_ast.TopLevel():
-            top_exprs: List[Type] = []
-            for expr in node.expressions:
-                t = typecheck(expr, type_table)
-                top_exprs.append(t)
-
-            if node.returns_last:
-                return top_exprs[-1]
-            return Unit()
-
-    raise Exception("No match")
+    node_type = get_type(node, TypeTable())
+    node.type = node_type
+    return node_type
