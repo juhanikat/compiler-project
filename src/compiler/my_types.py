@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List, Self, Tuple, Type
+from typing import Any, Tuple
 
 type BasicType = Int | Bool | Unit
-type MyType = Int | Bool | Unit | FunType
+type Type = Int | Bool | Unit | FunType
 
 
 class Int:
@@ -34,9 +34,9 @@ class Unit:
 
 @dataclass(init=False)
 class FunType:
-    type_args: Tuple[MyType, ...]
-    return_type: MyType
+    type_args: Tuple[Type, ...]
+    return_type: Type
 
-    def __init__(self, *type_args: MyType, return_type: MyType):
+    def __init__(self, *type_args: Type, return_type: Type):
         self.type_args = type_args
         self.return_type = return_type

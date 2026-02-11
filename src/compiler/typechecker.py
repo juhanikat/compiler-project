@@ -3,16 +3,16 @@ from types import NoneType
 from typing import Dict, List, Self
 
 from compiler import my_ast
-from compiler.my_types import BasicType, Bool, FunType, Int, MyType, Unit
+from compiler.my_types import BasicType, Bool, FunType, Int, Type, Unit
 
 
 @dataclass(init=False)
 class TypeTable:
     """Like SymTable, but maps variable names to types"""
-    locals: Dict[str, MyType]
+    locals: Dict[str, Type]
     parent: Self | None
 
-    def __init__(self, locals: Dict[str, MyType] | None = None, parent: Self | None = None) -> None:
+    def __init__(self, locals: Dict[str, Type] | None = None, parent: Self | None = None) -> None:
         if locals:
             self.locals = locals
         else:
@@ -39,13 +39,13 @@ class TypeTable:
         else:
             self.parent = None
 
-    def add(self, name: str, value: MyType) -> None:
+    def add(self, name: str, value: Type) -> None:
         if name in self.locals:
             raise Exception(f"Variable {name} was already in the type table")
         self.locals[name] = value
         return None
 
-    def lookup(self, name: str) -> MyType | None:
+    def lookup(self, name: str) -> Type | None:
         if name in self.locals:
             return self.locals.get(name)
         elif self.parent:
@@ -53,7 +53,7 @@ class TypeTable:
         return None
 
 
-def typecheck(node: my_ast.Expression | None, type_table: TypeTable | None = None) -> MyType:
+def typecheck(node: my_ast.Expression | None, type_table: TypeTable | None = None) -> Type:
     if node is None:
         return Unit()
     if type_table is None:
@@ -159,7 +159,7 @@ def typecheck(node: my_ast.Expression | None, type_table: TypeTable | None = Non
 
         case my_ast.Block():
             block_type_table = TypeTable(locals=None, parent=type_table)
-            block_exprs: List[MyType] = []
+            block_exprs: List[Type] = []
             for expr in node.expressions:
                 t = typecheck(expr, block_type_table)
                 block_exprs.append(t)
@@ -170,7 +170,7 @@ def typecheck(node: my_ast.Expression | None, type_table: TypeTable | None = Non
             return FunType(*block_exprs, return_type=Unit())
 
         case my_ast.TopLevel():
-            top_exprs: List[MyType] = []
+            top_exprs: List[Type] = []
             for expr in node.expressions:
                 t = typecheck(expr, type_table)
                 top_exprs.append(t)

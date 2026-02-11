@@ -225,7 +225,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression | None:
             return type
 
         var_token = consume("var")
-        var_type: my_types.MyType | None = None
+        var_type: my_types.Type | None = None
 
         if peek().type == TokenType.IDENTIFIER:
             name = parse_identifier()

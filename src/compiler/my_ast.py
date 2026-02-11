@@ -1,17 +1,17 @@
 from dataclasses import dataclass
 from typing import Any, Tuple
 
-from compiler.my_types import BasicType, MyType
+from compiler.my_types import BasicType, Type
 from compiler.tokenizer import SourceLocation
 
 
 @dataclass(init=False)
 class Expression:
     """Base class for AST nodes representing expressions."""
-    type: MyType | None
+    type: Type | None
     source_loc: SourceLocation | None
 
-    def __init__(self, *, type: MyType | None = None, source_loc: SourceLocation | None = None):
+    def __init__(self, *, type: Type | None = None, source_loc: SourceLocation | None = None):
         self.type = type
         self.source_loc = source_loc
 
@@ -200,7 +200,7 @@ class Variable(Expression):
     name: str | Function
     value:  Expression
 
-    def __init__(self, name: str | Function, value: Expression, *, type: MyType | None = None, source_loc: SourceLocation | None = None):
+    def __init__(self, name: str | Function, value: Expression, *, type: Type | None = None, source_loc: SourceLocation | None = None):
         super().__init__(type=type, source_loc=source_loc)
         self.name = name
         self.value = value
