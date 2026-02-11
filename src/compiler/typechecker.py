@@ -3,7 +3,7 @@ from types import NoneType
 from typing import Dict, List, Self
 
 from compiler import my_ast
-from compiler.my_types import BasicType, Bool, FunType, Int, Type, Unit
+from compiler.my_types import Bool, FunType, Int, Type, Unit
 
 
 @dataclass(init=False)
@@ -61,7 +61,7 @@ def typecheck(node: my_ast.Expression | None) -> Type:
             case my_ast.EmptyExpression():
                 return Unit()
             case my_ast.Literal():
-                if isinstance(node.value, bool) and not isinstance(node.value, int):
+                if isinstance(node.value, bool):
                     return Bool()
                 elif isinstance(node.value, int):
                     return Int()
@@ -84,14 +84,6 @@ def typecheck(node: my_ast.Expression | None) -> Type:
                     raise Exception(
                         f"TypeTable has function {node.name}, but its value is not a FunType!")
                 return value.return_type
-
-            case my_ast.Boolean():
-                # TODO: should probably remove my_ast.Boolean entirely since Literal can already be bool?
-                if isinstance(node.value, bool):
-                    return Bool()
-                else:
-                    raise TypeError(
-                        f"{node.value} is not a boolean")
 
             case my_ast.Variable():
                 if isinstance(node.name, my_ast.Function):

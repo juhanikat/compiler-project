@@ -28,6 +28,13 @@ def generate_ir(
                 return my_ir.IRVar(f"v{i}")
         raise Exception("Ran out of variables!")
 
+    def new_label() -> my_ir.Label:
+        for i in range(100):
+            if f"L{i}" not in reserved_names:
+                reserved_names.add(f"L{i}")
+                return my_ir.Label(f"L{i}")
+        raise Exception("Ran out of labels!")
+
     # We collect the IR instructions that we generate
     # into this list.
     ins: list[my_ir.Instruction] = []
@@ -93,6 +100,38 @@ def generate_ir(
                 ins.append(my_ir.Call(
                     var_op, [var_left, var_right], var_result, loc=loc))
                 return var_result
+
+            case my_ast.IfThen():
+                l_then = new_label()
+                l_end = new_label()
+
+                var_cond = visit(sym_table, expr.if_expr)
+
+                ins.append(my_ir.CondJump(var_cond, l_then, l_end))
+
+                ins.append(l_then)
+                visit(sym_table, expr.then_expr)
+
+                ins.append(l_end)
+                return var_unit
+
+            case my_ast.IfThenElse():
+                l_then = new_label()
+                l_else = new_label()
+                l_end = new_label()
+
+                var_cond = visit(sym_table, expr.if_expr)
+                ins.append(my_ir.CondJump(var_cond, l_then, l_end))
+
+                ins.append(l_then)
+                visit(sym_table, expr.then_expr)
+                ins.append(my_ir.Jump(l_end))
+
+                ins.append(l_else)
+                visit(sym_table, expr.then_expr)
+
+                ins.append(l_end)
+                return var_unit
 
             case _:
                 raise Exception("Not implemented!")

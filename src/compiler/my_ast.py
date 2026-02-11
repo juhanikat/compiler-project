@@ -52,17 +52,6 @@ class Identifier(Expression):
 
 
 @dataclass
-class Boolean(Expression):
-    value: bool
-
-    def __eq__(self, value: Any) -> bool:
-        return super().__eq__(value)
-
-    def __repr__(self) -> str:
-        return f"Boolean({self.value}) at loc {self.source_loc}"
-
-
-@dataclass
 class BinaryOp(Expression):
     """AST node for a binary operation like `A + B`"""
     left: Expression

@@ -77,7 +77,7 @@ def test_functions() -> None:
     assert interpret(
         parse(tokenize("var f(a, b) = { a * b }; f(1, 2)"))) == 2
     # TODO: you should be able to change function values later! (should this be f(a,b) = new_value OR f = new_value?)
-    #interpret(
+    # interpret(
     #    parse(tokenize("var f(a, b) = { a * b }; f(a, b) = { a + b }; f(1, 2)"))) == 3
 
     assert interpret(

@@ -1,14 +1,16 @@
 import pytest
 
-from compiler.my_ast import (BinaryOp, Block, Boolean, EmptyExpression,
-                             Function, Identifier, IfThen, IfThenElse, Literal,
-                             TopLevel, UnaryOp, Variable, WhileDo)
+from compiler.my_ast import (BinaryOp, Block, EmptyExpression, Function,
+                             Identifier, IfThen, IfThenElse, Literal, TopLevel,
+                             UnaryOp, Variable, WhileDo)
 from compiler.my_types import Bool, FunType, Int, Unit
 from compiler.parser import parse
 from compiler.tokenizer import tokenize
 
 
 def test_parser_basics() -> None:
+    print("TOKENNNN")
+    print(tokenize("true"))
     assert parse(tokenize("1")) == Literal(1)
     assert parse(tokenize("1 + 2")) == BinaryOp(Literal(1), "+", Literal(2))
     assert parse(tokenize("1 + 2 * 3 / 4")) == BinaryOp(Literal(1),
@@ -22,7 +24,7 @@ def test_parser_basics() -> None:
                                                 "+", Identifier("b"))
     assert parse(tokenize("hapsu + hapsu2")
                  ) == BinaryOp(Identifier("hapsu"), "+", Identifier("hapsu2"))
-    assert parse(tokenize("true")) == Boolean(True)
+    assert parse(tokenize("true")) == Literal(True)
 
 
 def test_parentheses() -> None:
@@ -253,7 +255,7 @@ def test_advanced_blocks() -> None:
               returns_last=True)
 
     assert parse(tokenize("{ if true then { a } b }")) == \
-        Block(IfThen(Boolean(True),
+        Block(IfThen(Literal(True),
                      Block(Identifier("a"),
                            returns_last=True
                            )),
@@ -261,7 +263,7 @@ def test_advanced_blocks() -> None:
               returns_last=True)
 
     assert parse(tokenize("{ if true then { a }; b }")) == \
-        Block(IfThen(Boolean(True),
+        Block(IfThen(Literal(True),
                      Block(Identifier("a"),
                            returns_last=True
                            )),
@@ -276,7 +278,7 @@ def test_advanced_blocks() -> None:
         parse(tokenize("{ if true then { a } b c }"))
 
     assert parse(tokenize("{ if true then { a } b; c }")) == \
-        Block(IfThen(Boolean(True),
+        Block(IfThen(Literal(True),
                      Block(Identifier("a"),
                            returns_last=True
                            )),
@@ -286,7 +288,7 @@ def test_advanced_blocks() -> None:
               )
 
     assert parse(tokenize("{ if true then { a } else { b } c }")) == \
-        Block(IfThenElse(Boolean(True),
+        Block(IfThenElse(Literal(True),
                          Block(Identifier("a"),
                                returns_last=True
                                ),
@@ -325,7 +327,7 @@ def test_top_level_blocks() -> None:
                           Literal(2)), returns_last=True)
 
     assert parse(tokenize(" true; b = { x }")) == \
-        TopLevel(Boolean(True),
+        TopLevel(Literal(True),
                  BinaryOp(Identifier("b"),
                           "=",
                           Block(Identifier("x"), returns_last=True)
@@ -358,11 +360,10 @@ def test_typing() -> None:
     assert parse(tokenize("var x: Int = 1")) == Variable(
         "x", Literal(1), type=Int())
     assert parse(tokenize("var x: Bool = true")) == Variable(
-        "x", Boolean(True), type=Bool())
+        "x", Literal(True), type=Bool())
     assert parse(tokenize("var x: Bool = true; x")) == \
         TopLevel(Variable("x",
-                          Boolean(
-                              True),
+                          Literal(True),
                           type=Bool()),
                  Identifier("x"),
                  returns_last=True)

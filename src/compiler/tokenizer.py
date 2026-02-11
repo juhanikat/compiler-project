@@ -4,7 +4,7 @@ from enum import Enum
 
 
 class TokenType(Enum):
-    INT_LITERAL = "int_literal"
+    LITERAL = "literal"
     IDENTIFIER = "identifier"
     OPERATOR = "operator"
     PUNCTUATION = "punctuation"
@@ -46,8 +46,9 @@ class Token:
 
 
 def tokenize(source_code: str) -> list[Token]:
-    int_literal_patterns = [
-        re.compile(r"[0-9]+")
+    literal_patterns = [
+        re.compile(r"[0-9]+"),
+        re.compile(r"false|true")
     ]
 
     identifier_patterns = [
@@ -71,11 +72,11 @@ def tokenize(source_code: str) -> list[Token]:
     ]
 
     def look_for_matches(source_code: str) -> Token | None:
-        for int_literal_pattern in int_literal_patterns:
-            match = re.match(int_literal_pattern, source_code)
+        for literal_pattern in literal_patterns:
+            match = re.match(literal_pattern, source_code)
             if match:
                 return Token(match.group(
-                ), TokenType.INT_LITERAL, SourceLocation(line, column))
+                ), TokenType.LITERAL, SourceLocation(line, column))
         for identifier_pattern in identifier_patterns:
             match = re.match(identifier_pattern, source_code)
             if match:
@@ -124,6 +125,3 @@ def tokenize(source_code: str) -> list[Token]:
             break
 
     return output
-
-
-tokenize("\n{25};")

@@ -43,7 +43,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
         token = peek()
         if isinstance(expected, str) and token.text != expected:
             raise Exception(
-                f'{token.source_loc}: expected "{expected}", but got {token.text}')
+                f'{token.source_loc}: expected "{expected}", but got "{token.text}"')
         if isinstance(expected, list) and token.text not in expected:
             comma_separated = ", ".join([f'"{e}"' for e in expected])
             raise Exception(
@@ -106,10 +106,8 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
         elif allow_vars and peek().text == "var":
             return parse_variable_declaration()
 
-        if peek().type == TokenType.INT_LITERAL:
-            return parse_int_literal()
-        elif peek().text in ["true", "false"]:
-            return parse_boolean()
+        if peek().type == TokenType.LITERAL:
+            return parse_literal()
         elif peek().type == TokenType.IDENTIFIER:
             return parse_identifier()
         else:
@@ -273,11 +271,15 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
         do_expr = parse_expression()
         return my_ast.WhileDo(condition, do_expr, source_loc=while_token.source_loc)
 
-    def parse_int_literal() -> my_ast.Literal:
-        if peek().type != TokenType.INT_LITERAL:
+    def parse_literal() -> my_ast.Literal:
+        if peek().type != TokenType.LITERAL:
             raise Exception(
-                f'{peek().source_loc}: expected an integer literal')
+                f'{peek().source_loc}: expected a literal')
         token = consume()
+        if token.text == "true":
+            return my_ast.Literal(True, source_loc=token.source_loc)
+        elif token.text == "false":
+            return my_ast.Literal(False, source_loc=token.source_loc)
         return my_ast.Literal(int(token.text), source_loc=token.source_loc)
 
     def parse_identifier() -> my_ast.Identifier | my_ast.Function:
@@ -289,16 +291,6 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
         if peek().text == "(":
             return parse_function(token.text)
         return my_ast.Identifier(token.text, source_loc=token.source_loc)
-
-    def parse_boolean() -> my_ast.Boolean:
-        if peek().text == "true":
-            boolean_token = consume("true")
-            return my_ast.Boolean(True, source_loc=boolean_token.source_loc)
-        elif peek().text == "false":
-            boolean_token = consume("false")
-            return my_ast.Boolean(False, source_loc=boolean_token.source_loc)
-        raise Exception(
-            f'{peek().source_loc}: expected a boolean value, but got "{peek().text}"')
 
     output = parse_top_level()
     return output

@@ -72,8 +72,6 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
     match node:
         case my_ast.Literal():
             return node.value
-        case my_ast.Boolean():
-            return node.value
 
         case my_ast.Variable():
             if isinstance(node.name, my_ast.Function):
@@ -81,7 +79,7 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
                 # add two things to sym_table: function_name -> Block, and function_name -> function_params
                 sym_table.add(node.name.name, node.value)
                 sym_table.add(node.name.name + "_params", node.name.params)
-            elif isinstance(node.value, my_ast.Literal) or isinstance(node.value, my_ast.Boolean):
+            elif isinstance(node.value, my_ast.Literal):
                 sym_table.add(node.name, node.value)
 
             # should getting here throw an Exception? Doing so breaks tests currently
