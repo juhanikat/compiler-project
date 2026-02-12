@@ -9,8 +9,6 @@ from compiler.tokenizer import tokenize
 
 
 def test_parser_basics() -> None:
-    print("TOKENNNN")
-    print(tokenize("true"))
     assert parse(tokenize("1")) == Literal(1)
     assert parse(tokenize("1 + 2")) == BinaryOp(Literal(1), "+", Literal(2))
     assert parse(tokenize("1 + 2 * 3 / 4")) == BinaryOp(Literal(1),

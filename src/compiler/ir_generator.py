@@ -85,18 +85,44 @@ def generate_ir(
                     raise Exception(f"{expr.name} not found in IR Table")
                 return ir_var
 
+            case my_ast.Variable():
+                if isinstance(expr.name, my_ast.Function):
+                    raise Exception("Not implemented!")
+                value_ir = visit(sym_table, expr.value)
+                sym_table.add(expr.name, value_ir)
+                # ins.append(my_ir.Copy(value_ir, my_ir.IRVar(expr.name)))
+                return var_unit
+
             case my_ast.BinaryOp():
-                # Ask the symbol table to return the variable that refers
-                # to the operator to call.
+                if expr.op == "=":
+                    if not isinstance(expr.left, my_ast.Identifier):
+                        raise Exception(f"{expr.left} is not an identifier")
+
+                    var_left = visit(sym_table, expr.left)
+                    var_right = visit(sym_table, expr.right)
+                    ins.append(my_ir.Copy(var_right, var_left))
+                    return var_unit
+
+                var_left = visit(sym_table, expr.left)
+                # this might not work correctly
+                if expr.op == "or" and isinstance(ins[-1], my_ir.LoadBoolConst) and ins[-1].value == True:
+                    var = new_var()
+                    ins.append(my_ir.LoadBoolConst(
+                        True, var, loc=loc))
+                    return var
+                elif expr.op == "and" and isinstance(ins[-1], my_ir.LoadBoolConst) and ins[-1].value == False:
+                    var = new_var()
+                    ins.append(my_ir.LoadBoolConst(
+                        False, var, loc=loc))
+                    return var
+
                 var_op = sym_table.lookup(expr.op)
                 if not var_op:
                     raise Exception(f"{expr.op} not found in IR Table")
-                # Recursively emit instructions to calculate the operands.
-                var_left = visit(sym_table, expr.left)
+
                 var_right = visit(sym_table, expr.right)
-                # Generate variable to hold the result.
                 var_result = new_var()
-                # Emit a Call instruction that writes to that variable.
+
                 ins.append(my_ir.Call(
                     var_op, [var_left, var_right], var_result, loc=loc))
                 return var_result
@@ -133,8 +159,23 @@ def generate_ir(
                 ins.append(l_end)
                 return var_unit
 
+            case my_ast.TopLevel():
+                for child_expr in expr.expressions:
+                    visit(sym_table, child_expr)
+                return var_unit
+
+            case my_ast.Block():
+                block_sym_table = SymTable[my_ir.IRVar](locals={}, parent=None)
+                for name in reserved_names:
+                    block_sym_table.add(name, my_ir.IRVar(name))
+
+                for child_expr in expr.expressions:
+                    visit(block_sym_table, child_expr)
+                return var_unit
+
             case _:
-                raise Exception("Not implemented!")
+                print(expr)
+                raise Exception("Didn't match any ast!")
 
     # We start with a SymTab that maps all available global names
     # like 'print_int' to IR variables of the same name.
@@ -143,19 +184,21 @@ def generate_ir(
     # they just need to exist so the variable lookups work,
     # and clashing variable names can be avoided.
 
-    root_symtab = SymTable[my_ir.IRVar](locals={}, parent=None)
+    root_sym_table = SymTable[my_ir.IRVar](locals={}, parent=None)
     for name in reserved_names:
-        root_symtab.add(name, my_ir.IRVar(name))
+        root_sym_table.add(name, my_ir.IRVar(name))
 
     # Start visiting the AST from the root.
-    var_final_result = visit(root_symtab, root_expr)
+    var_final_result = visit(root_sym_table, root_expr)
 
     # Add IR code to print the result, based on the type assigned earlier
     # by the type checker.
     if root_expr.type == Int:
-        ...  # Emit a call to 'print_int'
+        ins.append(my_ir.Call(my_ir.IRVar("print_int"),
+                   [var_final_result], new_var()))
     elif root_expr.type == Bool:
-        ...  # Emit a call to 'print_bool'
+        ins.append(my_ir.Call(my_ir.IRVar("print_bool"),
+                   [var_final_result], new_var()))
 
     return ins
 
