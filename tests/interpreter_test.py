@@ -8,6 +8,8 @@ from compiler.tokenizer import tokenize
 
 def test_interpreter_basics() -> None:
     assert interpret(parse(tokenize("2 + 3"))) == 5
+    assert interpret(parse(tokenize("2 - 3"))) == -1
+    assert interpret(parse(tokenize("2 - -3"))) == 5
     assert interpret(parse(tokenize("2 + 2 + 3"))) == 7
     assert interpret(parse(tokenize("2 / 4"))) == 0.5
     assert interpret(parse(tokenize("2 + 2 / 4 * 5"))) == 4.5
@@ -96,3 +98,12 @@ def test_functions() -> None:
 
     # TODO: functions can be assigned values other than Blocks once they have been created, fix later!
     interpret(parse(tokenize("var f() = { true }; f = 2; f")))
+
+
+def test_built_in_funcs() -> None:
+    assert interpret(parse(tokenize("print_int(3)"))) == None
+    assert interpret(
+        parse(tokenize("var f(i) = { print_int(i) }; f(150); true"))) == True
+    assert interpret(parse(tokenize("print_bool(true)"))) == None
+    # commented since otherwise input is lways needed when running tests
+    #assert isinstance(interpret(parse(tokenize("read_int()"))), int)

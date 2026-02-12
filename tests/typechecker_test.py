@@ -19,7 +19,7 @@ def test_binary_op() -> None:
         parse(tokenize("var a = 2; var b = a * a; a + b"))) == Int()
 
     with pytest.raises(TypeError):
-        print(typecheck(parse(tokenize("var a = 1; var b = true; a + b"))))
+        typecheck(parse(tokenize("var a = 1; var b = true; a + b")))
 
 
 def test_functions() -> None:

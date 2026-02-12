@@ -9,6 +9,7 @@ T = TypeVar("T")
 
 DEFAULT_LOCALS: Dict[str, Value] = {
     "+": lambda a, b:  a + b,
+    "-": lambda a, b: a - b,
     "unary_-": lambda a: -a,
     "*": lambda a, b:  a * b,
     "/": lambda a, b:  a / b,
@@ -23,9 +24,12 @@ DEFAULT_LOCALS: Dict[str, Value] = {
     "and": lambda a, b:  a and b,
     "unary_not": lambda a: not a,
     "while": lambda a, b:  a / b,
-    "print_int": lambda i: print(i + "\n"),
+    "print_int": lambda i: print(str(i) + "\n"),
     "print_bool": lambda b: print(str(b).lower() + "\n"),
-    # TODO: read_int
+    "read_int": lambda: int(input()),
+    "print_int_params": tuple([my_ast.Identifier("i")]),
+    "print_bool_params": tuple([my_ast.Identifier("b")]),
+    "read_int_params": tuple([])
 }
 
 
@@ -178,26 +182,40 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
             return None
 
         case my_ast.Function():
-            func_block = sym_table.lookup(node.name)
-            func_params = sym_table.lookup(node.name + "_params")
+            func_value = sym_table.lookup(node.name)
+            func_params = sym_table.lookup(
+                node.name + "_params")  # func_params can be an empty tuple
             if not isinstance(func_params, Iterable):
-                raise Exception
-            if not func_block:
-                raise Exception(f"Function {node.name} is not defined")
-            if not isinstance(func_block, my_ast.Block):
                 raise Exception(
-                    f"{func_block} is not a Block")
+                    f"{func_params} is not an Iterable")
 
             given_args = node.params
+            if not isinstance(given_args, Iterable):
+                raise Exception(
+                    f"The arguments given to '{node.name}' ({given_args}) is not an Iterable")
+
+            interpreted = []
+            for given_arg in given_args:
+                interpreted.append(interpret(given_arg, sym_table))
+
+            if node.name in ["print_int", "print_bool", "read_int"] and callable(func_value):
+                print(node.name)
+                return func_value(*interpreted)
+
+            if not func_value:
+                raise Exception(f"Function {node.name} is not defined")
+            if not isinstance(func_value, my_ast.Block):
+                raise Exception(
+                    f"{func_value} is not a Block")
+
             func_sym_table = SymTable[Value](
                 locals=DEFAULT_LOCALS.copy(), parent=sym_table)
-            for func_arg, given_arg in zip(func_params, given_args):
+            for func_arg, interpreted_given_arg in zip(func_params, interpreted):
                 if not isinstance(func_arg, my_ast.Identifier):
                     raise Exception
-
                 func_sym_table.add(
-                    func_arg.name, interpret(given_arg, sym_table))
-            return interpret(func_block, func_sym_table)
+                    func_arg.name, interpreted_given_arg)
+            return interpret(func_value, func_sym_table)
 
         case _:
             raise Exception(

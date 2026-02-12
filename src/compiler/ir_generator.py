@@ -205,4 +205,3 @@ def generate_ir(
 
 reserved_names = set(DEFAULT_LOCALS.copy().keys())
 root_expr = parse(tokenize("1 + 2 * 3"))
-print(generate_ir(reserved_names, root_expr))
