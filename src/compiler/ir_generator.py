@@ -28,11 +28,11 @@ def generate_ir(
                 return my_ir.IRVar(f"v{i}")
         raise Exception("Ran out of variables!")
 
-    def new_label() -> my_ir.Label:
+    def new_label(loc: SourceLocation) -> my_ir.Label:
         for i in range(100):
             if f"L{i}" not in reserved_names:
                 reserved_names.add(f"L{i}")
-                return my_ir.Label(f"L{i}")
+                return my_ir.Label(f"L{i}", loc=loc)
         raise Exception("Ran out of labels!")
 
     # We collect the IR instructions that we generate
@@ -90,7 +90,6 @@ def generate_ir(
                     raise Exception("Not implemented!")
                 value_ir = visit(sym_table, expr.value)
                 sym_table.add(expr.name, value_ir)
-                # ins.append(my_ir.Copy(value_ir, my_ir.IRVar(expr.name)))
                 return var_unit
 
             case my_ast.BinaryOp():
@@ -100,7 +99,7 @@ def generate_ir(
 
                     var_left = visit(sym_table, expr.left)
                     var_right = visit(sym_table, expr.right)
-                    ins.append(my_ir.Copy(var_right, var_left))
+                    ins.append(my_ir.Copy(var_right, var_left, loc=loc))
                     return var_unit
 
                 var_left = visit(sym_table, expr.left)
@@ -128,12 +127,12 @@ def generate_ir(
                 return var_result
 
             case my_ast.IfThen():
-                l_then = new_label()
-                l_end = new_label()
+                l_then = new_label(loc=loc)
+                l_end = new_label(loc=loc)
 
                 var_cond = visit(sym_table, expr.if_expr)
 
-                ins.append(my_ir.CondJump(var_cond, l_then, l_end))
+                ins.append(my_ir.CondJump(var_cond, l_then, l_end, loc=loc))
 
                 ins.append(l_then)
                 visit(sym_table, expr.then_expr)
@@ -142,16 +141,16 @@ def generate_ir(
                 return var_unit
 
             case my_ast.IfThenElse():
-                l_then = new_label()
-                l_else = new_label()
-                l_end = new_label()
+                l_then = new_label(loc=loc)
+                l_else = new_label(loc=loc)
+                l_end = new_label(loc=loc)
 
                 var_cond = visit(sym_table, expr.if_expr)
-                ins.append(my_ir.CondJump(var_cond, l_then, l_end))
+                ins.append(my_ir.CondJump(var_cond, l_then, l_end, loc=loc))
 
                 ins.append(l_then)
                 visit(sym_table, expr.then_expr)
-                ins.append(my_ir.Jump(l_end))
+                ins.append(my_ir.Jump(l_end, loc=loc))
 
                 ins.append(l_else)
                 visit(sym_table, expr.then_expr)
