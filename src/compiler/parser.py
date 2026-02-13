@@ -1,7 +1,7 @@
 from typing import List
 
 from compiler import my_ast, my_types
-from compiler.tokenizer import Token, TokenType
+from compiler.tokenizer import SourceLocation, Token, TokenType
 
 left_associative_binary_operators: List[List[str]] = [
     ["="],
@@ -177,7 +177,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
             return my_ast.IfThenElse(if_expr, then_expr, else_expr, source_loc=if_token.source_loc)
         return my_ast.IfThen(if_expr, then_expr, source_loc=if_token.source_loc)
 
-    def parse_function(name: str) -> my_ast.Function:
+    def parse_function(name: str, source_loc: SourceLocation) -> my_ast.Function:
         consume("(")
         params = []
         # check if the function has any parameters
@@ -191,7 +191,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
                 params.append(param)
 
         consume(")")
-        return my_ast.Function(name, *tuple(params))
+        return my_ast.Function(name, *tuple(params), source_loc=source_loc)
 
     def parse_unary() -> my_ast.UnaryOp:
         if peek().text == "not":
@@ -289,7 +289,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
         token = consume()
         # check if this is the start of a function
         if peek().text == "(":
-            return parse_function(token.text)
+            return parse_function(token.text, token.source_loc)
         return my_ast.Identifier(token.text, source_loc=token.source_loc)
 
     output = parse_top_level()

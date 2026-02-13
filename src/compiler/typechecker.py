@@ -60,6 +60,7 @@ def typecheck(node: my_ast.Expression | None) -> Type:
         match node:
             case my_ast.EmptyExpression():
                 return Unit()
+
             case my_ast.Literal():
                 if isinstance(node.value, bool):
                     return Bool()

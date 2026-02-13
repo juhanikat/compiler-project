@@ -45,6 +45,7 @@ def get_all_ir_variables(instructions: list[my_ir.Instruction]) -> list[my_ir.IR
                 for v in value:
                     if isinstance(v, my_ir.IRVar):
                         add(v)
+
     return result_list
 
 
@@ -57,8 +58,21 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
     locals = Locals(
         variables=get_all_ir_variables(instructions)
     )
+    # functions will not have more parameters than 6
+    param_registers = ['%rdi', '%rsi', '%rdx', '%rcx', '%r8', '%r9']
 
-    # ... Emit initial declarations and stack setup here ...
+    emit('.extern print_int')
+    emit('.extern print_bool')
+    emit('.extern read_int')
+    emit('.global main')
+    emit('.type main, @ function')
+
+    emit('.section .text')
+
+    emit('main:')
+    emit('pushq %rbp')
+    emit('movq %rsp, %rbp')
+    emit(f'subq ${locals.stack_used()}, %rsp')
 
     for insn in instructions:
         emit('# ' + str(insn))
@@ -95,15 +109,20 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                 emit(f'jne {insn.then_label}')
                 emit(f'jmp {insn.else_label}')
             case my_ir.Call():
-                if insn.fun in intrinsics.all_intrinsics:
+                if insn.fun.name in intrinsics.all_intrinsics:
                     args = intrinsics.IntrinsicArgs([
                         locals.get_ref(insn.args[0]),
                         locals.get_ref(insn.args[1])],
                         r"%rax",
                         emit)
                     # call intrinsic function
-                    intrinsics.all_intrinsics[locals.get_ref(insn.fun)](args)
+                    intrinsics.all_intrinsics[insn.fun.name](args)
                 else:
-                    pass
+                    raise Exception("Not implemented!")
+                    for param, register in zip(insn.args, param_registers):
+                        emit(f'movq {locals.get_ref(param)}, {register}')
+                    emit(f'callq {locals.get_ref(insn.fun)}')
+                    emit(f'popq %rbp')
+                    emit('ret')
 
     return "\n".join(lines)

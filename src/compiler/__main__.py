@@ -1,17 +1,26 @@
-from base64 import b64encode
 import json
 import re
 import sys
+from base64 import b64encode
 from socketserver import ForkingTCPServer, StreamRequestHandler
 from traceback import format_exception
 from typing import Any
 
+from compiler.assembler import assemble_and_get_executable
+from compiler.assembly_generator import generate_assembly
+from compiler.ir_generator import generate_ir
+from compiler.parser import parse
+from compiler.tokenizer import tokenize
+from compiler.typechecker import typecheck
+
 
 def call_compiler(source_code: str) -> bytes:
-    # *** TODO ***
     # Call your compiler here and return the compiled executable.
     # Raise an exception on compilation error.
-    # *** TODO ***
+    try:
+        return assemble_and_get_executable(generate_assembly(generate_ir(None, parse(tokenize(source_code)))))
+    except Exception as e:
+        raise e
     raise NotImplementedError("Compiler not implemented")
 
 
@@ -40,7 +49,8 @@ def main() -> int:
 
     valid_commands = ['compile', 'serve']
     if command is None:
-        print(f"Error: command argument missing. Valid commands: {', '.join(valid_commands)}", file=sys.stderr)
+        print(
+            f"Error: command argument missing. Valid commands: {', '.join(valid_commands)}", file=sys.stderr)
         return 1
 
     if command not in valid_commands:

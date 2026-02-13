@@ -50,6 +50,7 @@ def generate_ir(
     # in the interpreter and type checker.
     def visit(sym_table: SymTable[my_ir.IRVar], expr: my_ast.Expression) -> my_ir.IRVar:
         loc = expr.source_loc
+        print(expr)
         if not loc:
             raise Exception("Missing SourceLocation")
 
