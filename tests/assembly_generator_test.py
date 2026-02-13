@@ -5,5 +5,10 @@ from compiler.tokenizer import tokenize
 
 
 def test_basics() -> None:
+    # print(generate_assembly(generate_ir(reserved_names=None, root_expr=parse(
+    #    tokenize("{var x = true; if x then 1 else 2; }")))))
     print(generate_assembly(generate_ir(reserved_names=None, root_expr=parse(
-        tokenize("{var x = true; if x then 1 else 2; }")))))
+        tokenize("{ var x = 1 + 2; x = 1 }")))))
+    
+    print(generate_assembly(generate_ir(reserved_names=None, root_expr=parse(
+        tokenize("{ var x = -1 }")))))

@@ -1,6 +1,6 @@
 import dataclasses
 
-from compiler import my_ir
+from compiler import intrinsics, my_ir
 
 
 class Locals:
@@ -86,12 +86,24 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                 else:
                     emit(f'movq ${0}, {locals.get_ref(insn.dest)}')
             case my_ir.Copy():
-                emit(f'movq {insn.source}, %rax')
-                emit(f'movq %rax, {insn.dest}')
+                emit(f'movq {locals.get_ref(insn.source)}, %rax')
+                emit(f'movq %rax, {locals.get_ref(insn.dest)}')
             case my_ir.Jump():
                 emit(f'jmp .L{insn.label.name}')
             case my_ir.CondJump():
-                emit(f'cmpq $0, {insn.cond}')
+                emit(f'cmpq $0, {locals.get_ref(insn.cond)}')
                 emit(f'jne {insn.then_label}')
                 emit(f'jmp {insn.else_label}')
+            case my_ir.Call():
+                if insn.fun in intrinsics.all_intrinsics:
+                    args = intrinsics.IntrinsicArgs([
+                        locals.get_ref(insn.args[0]),
+                        locals.get_ref(insn.args[1])],
+                        r"%rax",
+                        emit)
+                    # call intrinsic function
+                    intrinsics.all_intrinsics[locals.get_ref(insn.fun)](args)
+                else:
+                    pass
+
     return "\n".join(lines)

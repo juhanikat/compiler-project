@@ -92,6 +92,24 @@ def generate_ir(
                 sym_table.add(expr.name, value_ir)
                 return var_unit
 
+            case my_ast.UnaryOp():
+                if not isinstance(expr.target, my_ast.Literal):
+                    raise Exception(
+                        "Target of an unary function was not a Literal")
+                if expr.op == "-":
+                    if not isinstance(expr.target.value, int):
+                        raise Exception("Target of '-' was not an int")
+                    var = new_var()
+                    ins.append(my_ir.LoadIntConst(
+                        -(expr.target.value), var, loc=loc))
+                    return var
+                elif expr.op == "not":
+                    var = new_var()
+                    ins.append(my_ir.LoadBoolConst(
+                        not expr.target, var, loc=loc))
+                    return var
+                raise Exception("Expected either '-' or 'not")
+
             case my_ast.BinaryOp():
                 if expr.op == "=":
                     if not isinstance(expr.left, my_ast.Identifier):
