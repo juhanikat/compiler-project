@@ -368,14 +368,15 @@ def test_typing() -> None:
 
     assert parse(
         tokenize("var f(a, b): (Bool, Bool) => Bool = { a or b };")) == \
-        TopLevel(Variable(Function("f",
-                                   Identifier("a"),
-                                   Identifier("b")
-                                   ),
+        TopLevel(Variable("f",
                           Block(BinaryOp(Identifier("a"),
                                          "or",
                                          Identifier("b")),
                                 returns_last=True),
+                          function_def=Function("f",
+                                                Identifier("a"),
+                                                Identifier("b"),
+                                                ),
                           type=FunType(Bool(),
                                        Bool(),
                                        return_type=Bool())
@@ -383,12 +384,13 @@ def test_typing() -> None:
 
     assert parse(
         tokenize("var f(a): (Bool) => Unit = { not a };")) == \
-        TopLevel(Variable(Function("f",
-                                   Identifier("a"),
-                                   ),
+        TopLevel(Variable("f",
                           Block(UnaryOp("not",
                                         Identifier("a")),
                                 returns_last=True),
+                          function_def=Function("f",
+                                                Identifier("a"),
+                                                ),
                           type=FunType(Bool(), return_type=Unit()),
                           )
                  )
@@ -401,9 +403,7 @@ def test_typing() -> None:
     with pytest.raises(Exception):
         parse(tokenize("var x: bool = true"))
 
-    with pytest.raises(Exception):
-        # TODO: should probably allow functions without arguments
-        parse(tokenize("var f(x): () => Int = { 2 * 2 }"))
+    parse(tokenize("var f(x): () => Int = { 2 * 2 }"))
     with pytest.raises(Exception):
         # no return type
         parse(tokenize("var f(x): (Int) = { x * 2 }"))

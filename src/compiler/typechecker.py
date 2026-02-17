@@ -87,13 +87,13 @@ def typecheck(node: my_ast.Expression | None) -> Type:
                 return value.return_type
 
             case my_ast.Variable():
-                if isinstance(node.name, my_ast.Function):
+                if node.function_def:
                     if not isinstance(node.value, my_ast.Block):
                         raise Exception(
                             "The value of a Function Variable was not a Block!")
 
                     params: List[Int] = []
-                    for param in node.name.params:
+                    for param in node.function_def.params:
                         # NOTE: All params are assumed to be Ints, fix!
                         if not isinstance(param, my_ast.Identifier):
                             raise Exception(
@@ -107,7 +107,7 @@ def typecheck(node: my_ast.Expression | None) -> Type:
                         raise Exception(
                             "Function's value type was not a FunType")
 
-                    type_table.add(node.name.name, FunType(
+                    type_table.add(node.name, FunType(
                         *params, return_type=value_type.return_type))
                 else:
                     value_type = get_type(node.value, type_table)
@@ -150,6 +150,13 @@ def typecheck(node: my_ast.Expression | None) -> Type:
 
             case my_ast.WhileDo():
                 return Unit()
+
+            case my_ast.FunctionCall():
+                value = type_table.lookup(node.name)
+                if not isinstance(value, FunType):
+                    raise Exception(
+                        f"TypeTable has function {node.name}, but its value is not a FunType!")
+                return value.return_type
 
             case my_ast.Block():
                 block_type_table = TypeTable(locals=None, parent=type_table)

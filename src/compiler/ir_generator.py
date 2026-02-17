@@ -87,7 +87,7 @@ def generate_ir(
                 return ir_var
 
             case my_ast.Variable():
-                if isinstance(expr.name, my_ast.Function):
+                if expr.function_def:
                     raise Exception("Not implemented!")
                 value_ir = visit(sym_table, expr.value)
                 sym_table.add(expr.name, value_ir)

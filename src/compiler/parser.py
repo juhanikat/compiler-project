@@ -52,6 +52,23 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
         last_consumed = token
         return token
 
+    def parse_type() -> my_types.BasicType:
+        """Parses a variable's type, if a type hint was given."""
+        type: my_types.BasicType | None = None
+        match peek().text:
+            case "Int":
+                type = my_types.Int()
+            case "Bool":
+                type = my_types.Bool()
+            case "Unit":
+                type = my_types.Unit()
+            case _:
+                raise Exception(
+                    f"{peek().source_loc}: Expected Int, Bool or Unit as type, but got {peek().text}")
+        # consume the type token
+        consume(["Int", "Bool", "Unit"])
+        return type
+
     def parse_expression(allow_vars: bool = False) -> my_ast.Expression:
         level_index = 0
         left = parse_term(0, allow_vars)
@@ -177,7 +194,8 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
             return my_ast.IfThenElse(if_expr, then_expr, else_expr, source_loc=if_token.source_loc)
         return my_ast.IfThen(if_expr, then_expr, source_loc=if_token.source_loc)
 
-    def parse_function(name: str, source_loc: SourceLocation) -> my_ast.Function:
+    def parse_function(for_new_var: bool, name: str, source_loc: SourceLocation) -> my_ast.Function | my_ast.FunctionCall:
+        """If for_new_var is set to True, this is a function definition, not a function call."""
         consume("(")
         params = []
         # check if the function has any parameters
@@ -191,7 +209,9 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
                 params.append(param)
 
         consume(")")
-        return my_ast.Function(name, *tuple(params), source_loc=source_loc)
+        if for_new_var:
+            return my_ast.Function(name, *tuple(params), source_loc=source_loc)
+        return my_ast.FunctionCall(name, *tuple(params), source_loc=source_loc)
 
     def parse_unary() -> my_ast.UnaryOp:
         if peek().text == "not":
@@ -206,27 +226,16 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
             f'{peek().source_loc}: expected "not" or "-", but got "{peek().text}"')
 
     def parse_variable_declaration() -> my_ast.Variable:
-        def parse_type() -> my_types.BasicType:
-            type: my_types.BasicType | None = None
-            match peek().text:
-                case "Int":
-                    type = my_types.Int()
-                case "Bool":
-                    type = my_types.Bool()
-                case "Unit":
-                    type = my_types.Unit()
-                case _:
-                    raise Exception(
-                        f"{peek().source_loc}: Expected Int, Bool or Unit as type, but got {peek().text}")
-            # consume the type token
-            consume(["Int", "Bool", "Unit"])
-            return type
-
         var_token = consume("var")
         var_type: my_types.Type | None = None
+        function_def: my_ast.Function | None = None
 
         if peek().type == TokenType.IDENTIFIER:
-            name = parse_identifier()
+            parsed = parse_identifier(True)
+            if isinstance(parsed, my_ast.Function):
+                function_def = parsed
+            name = parsed.name
+
         else:
             raise Exception(
                 f'{peek().source_loc}: expected the name of the variable, but got "{peek().text}"')
@@ -238,31 +247,31 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
                 # found function typing information
                 consume("(")
                 param_types = []
-                first_type = parse_type()
-                param_types.append(first_type)
-                while peek().text == ",":
-                    consume(",")
-                    param_type = parse_type()
-                    param_types.append(param_type)
+                if peek().text != ")":
+                    first_type = parse_type()
+                    param_types.append(first_type)
+                    while peek().text == ",":
+                        consume(",")
+                        param_type = parse_type()
+                        param_types.append(param_type)
                 consume(")")
                 consume("=>")  # might not work due to =
                 return_type = parse_type()
                 var_type = my_types.FunType(
                     *param_types, return_type=return_type)
+                if not function_def:
+                    raise Exception(
+                        "Found function typing info, but this is not a function definition!")
             else:
                 var_type = parse_type()
 
         consume("=")
-        value = parse_expression()
-        if isinstance(name, my_ast.Function):
-            if not isinstance(value, my_ast.Block):
-                raise Exception(f"Function value can only be a Block")
-            if var_type:
-                return my_ast.Variable(name, value, type=var_type, source_loc=var_token.source_loc)
-            return my_ast.Variable(name, value, source_loc=var_token.source_loc)
+        value = parse_expression(True)
+        if function_def and not isinstance(value, my_ast.Block):
+            raise Exception(f"Function value can only be a Block")
         if var_type:
-            return my_ast.Variable(name.name, value, type=var_type, source_loc=var_token.source_loc)
-        return my_ast.Variable(name.name, value, source_loc=var_token.source_loc)
+            return my_ast.Variable(name, value, function_def=function_def, type=var_type, source_loc=var_token.source_loc)
+        return my_ast.Variable(name, value, function_def=function_def, source_loc=var_token.source_loc)
 
     def parse_while_do() -> my_ast.WhileDo:
         while_token = consume("while")
@@ -282,14 +291,14 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
             return my_ast.Literal(False, source_loc=token.source_loc)
         return my_ast.Literal(int(token.text), source_loc=token.source_loc)
 
-    def parse_identifier() -> my_ast.Identifier | my_ast.Function:
+    def parse_identifier(for_new_var: bool = False) -> my_ast.Identifier | my_ast.Function | my_ast.FunctionCall:
         if peek().type != TokenType.IDENTIFIER:
             raise Exception(
                 f'{peek().source_loc}: expected an identifier, but got "{peek().text}"')
         token = consume()
         # check if this is the start of a function
         if peek().text == "(":
-            return parse_function(token.text, token.source_loc)
+            return parse_function(for_new_var, token.text, token.source_loc)
         return my_ast.Identifier(token.text, source_loc=token.source_loc)
 
     output = parse_top_level()

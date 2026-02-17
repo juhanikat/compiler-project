@@ -78,11 +78,10 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
             return node.value
 
         case my_ast.Variable():
-            if isinstance(node.name, my_ast.Function):
-                # if node.value is a Block, then this is a function
+            if node.function_def:
                 # add two things to sym_table: function_name -> Block, and function_name -> function_params
-                sym_table.add(node.name.name, node.value)
-                sym_table.add(node.name.name + "_params", node.name.params)
+                sym_table.add(node.name, node.value)
+                sym_table.add(node.name + "_params", node.function_def.params)
             elif isinstance(node.value, my_ast.Literal):
                 sym_table.add(node.name, node.value)
 
@@ -127,10 +126,7 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
             if node.op == "=":
                 if not isinstance(node.left, my_ast.Identifier):
                     raise Exception(
-                        f"{node.left} is not an identifier, so it cannot be assigned to")
-                if isinstance(node.left, my_ast.Function) and not isinstance(node.right, my_ast.Block):
-                    raise Exception(
-                        f"Cannot assign: {node.left} is a function, but {node.right} is not a Block")
+                        f"{node.left} is not an identifier, so it cannot be assigned to (assigning to functions is not allowed)")
                 sym_table.change(node.left.name, b)
                 return None
 
@@ -181,7 +177,8 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
                 interpret(node.do_expr, sym_table)
             return None
 
-        case my_ast.Function():
+        case my_ast.FunctionCall():
+            # the Block assigned to the function
             func_value = sym_table.lookup(node.name)
             func_params = sym_table.lookup(
                 node.name + "_params")  # func_params can be an empty tuple
@@ -189,7 +186,7 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
                 raise Exception(
                     f"{func_params} is not an Iterable")
 
-            given_args = node.params
+            given_args = node.args
             if not isinstance(given_args, Iterable):
                 raise Exception(
                     f"The arguments given to '{node.name}' ({given_args}) is not an Iterable")
@@ -199,7 +196,6 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
                 interpreted.append(interpret(given_arg, sym_table))
 
             if node.name in ["print_int", "print_bool", "read_int"] and callable(func_value):
-                print(node.name)
                 return func_value(*interpreted)
 
             if not func_value:
@@ -212,7 +208,8 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
                 locals=DEFAULT_LOCALS.copy(), parent=sym_table)
             for func_arg, interpreted_given_arg in zip(func_params, interpreted):
                 if not isinstance(func_arg, my_ast.Identifier):
-                    raise Exception
+                    raise Exception(
+                        f"Parameter '{func_arg}' set for function was not an identifier'")
                 func_sym_table.add(
                     func_arg.name, interpreted_given_arg)
             return interpret(func_value, func_sym_table)

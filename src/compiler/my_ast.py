@@ -104,6 +104,7 @@ class WhileDo(Expression):
 
 @dataclass(init=False)
 class Function(Expression):
+    """Used for function definitions as opposed to function calls."""
     name: str
     params: Tuple[Expression, ...]
 
@@ -111,6 +112,22 @@ class Function(Expression):
         super().__init__(source_loc=source_loc)
         self.name = name
         self.params = params
+
+    def __eq__(self, value: Any) -> bool:
+        return super().__eq__(value)
+
+
+@dataclass(init=False)
+class FunctionCall(Expression):
+    """Identical to Function, except params have been renamed to args.
+    Used for function calls as opposed to function definitions."""
+    name: str
+    args: Tuple[Expression, ...]
+
+    def __init__(self, name: str, *args: Expression, source_loc: SourceLocation | None = None) -> None:
+        super().__init__(source_loc=source_loc)
+        self.name = name
+        self.args = args
 
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
@@ -147,8 +164,10 @@ class TopLevel(Expression):
 
 @dataclass
 class Variable(Expression):
-    name: str | Function
+    """Variable always has a name, and optionally a function_def if the variable contains a function"""
+    name: str
     value:  Expression
+    function_def: Function | None = field(kw_only=True, default=None)
 
     def __eq__(self, value: Any) -> bool:
         return super().__eq__(value)
