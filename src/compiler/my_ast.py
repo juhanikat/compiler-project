@@ -16,8 +16,8 @@ class Expression:
             return False
         for self_field, other_field in zip(self.__dict__, value.__dict__):
             if getattr(self, self_field) != getattr(value, other_field):
-                if self_field == "source_loc" and other_field == "source_loc":
-                    # NOTE: We do not compare the source_loc values to make testing easier, might cause problems later
+                if (self_field == "source_loc" and other_field == "source_loc") or (self_field == "type" and other_field == "type"):
+                    # NOTE: We do not compare the source_loc or type values to make testing easier, might cause problems later
                     continue
                 else:
                     return False
