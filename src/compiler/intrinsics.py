@@ -37,7 +37,6 @@ def unary_not(a: IntrinsicArgs) -> None:
 
 @_intrinsic("+")
 def plus(a: IntrinsicArgs) -> None:
-    print(a)
     if a.result_register != a.arg_refs[0]:
         a.emit(f'movq {a.arg_refs[0]}, {a.result_register}')
     a.emit(f'addq {a.arg_refs[1]}, {a.result_register}')

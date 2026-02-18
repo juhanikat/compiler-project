@@ -1,8 +1,8 @@
 import pytest
 
 from compiler.my_ast import (BinaryOp, Block, EmptyExpression, Function,
-                             Identifier, IfThen, IfThenElse, Literal, TopLevel,
-                             UnaryOp, Variable, WhileDo)
+                             FunctionCall, Identifier, IfThen, IfThenElse,
+                             Literal, TopLevel, UnaryOp, Variable, WhileDo)
 from compiler.my_types import Bool, FunType, Int, Unit
 from compiler.parser import parse
 from compiler.tokenizer import tokenize
@@ -95,21 +95,26 @@ def test_if_then_else() -> None:
 
 
 def test_functions() -> None:
-    assert parse(tokenize("f(a, b)")) == Function(
-        "f", Identifier("a"), Identifier("b"))
-    assert parse(tokenize("g(a, b + c, c * d)")) == Function("g",
-                                                             Identifier("a"),
-                                                             BinaryOp(Identifier("b"),
-                                                                      "+",
-                                                                      Identifier("c")),
-                                                             BinaryOp(Identifier("c"),
-                                                                      "*",
-                                                                      Identifier("d")))
-    assert parse(tokenize("h(a, b + c)")) == Function("h",
-                                                      Identifier("a"),
-                                                      BinaryOp(Identifier("b"),
-                                                               "+",
-                                                               Identifier("c")))
+    assert parse(tokenize("f(a, b) = { 1 }")) == Function(
+        "f", Identifier("a"), Identifier("b"), expr=Block(Literal(1), returns_last=True))
+    assert parse(tokenize("g(a, b, c) = { a + b - c * d }")) == \
+        Function("g",
+                 Identifier("a"),
+                 Identifier("b"),
+                 Identifier("c"),
+                 expr=Block(
+                     BinaryOp(Identifier("a"),
+                              "+",
+                              BinaryOp(Identifier("b"),
+                                       "-",
+                                       BinaryOp(
+                                  Identifier("c"),
+                                  "*",
+                                  Identifier("d"))
+                     )
+                     )
+                 )
+                 )
 
 
 def test_unary_parsing() -> None:
@@ -194,8 +199,8 @@ def test_blocks() -> None:
     assert parse(tokenize("x = { f(a); b }")) == \
         BinaryOp(Identifier("x"),
                  "=",
-                 Block(Function("f",
-                                Identifier("a")),
+                 Block(FunctionCall("f",
+                                    Identifier("a")),
                        Identifier("b"),
                        returns_last=True
                        )
@@ -300,8 +305,8 @@ def test_advanced_blocks() -> None:
     assert parse(tokenize("x = { { f(a) } { b } }")) == \
         BinaryOp(Identifier("x"),
                  "=",
-                 Block(Block(Function("f",
-                                      Identifier("a")),
+                 Block(Block(FunctionCall("f",
+                                          Identifier("a")),
                              returns_last=True
                              ),
                        Block(Identifier("b"),
@@ -344,14 +349,14 @@ def test_top_level_blocks() -> None:
                                 Identifier("x"), returns_last=True
                                 )
                           ),
-                 Function("f",
-                          Identifier("a"))
+                 FunctionCall("f",
+                              Identifier("a"))
                  )
 
 
 def test_while_do() -> None:
     assert parse(tokenize("while x do f(x)")) == \
-        WhileDo(Identifier("x"), Function("f", Identifier("x")))
+        WhileDo(Identifier("x"), FunctionCall("f", Identifier("x")))
 
 
 def test_typing() -> None:
@@ -369,28 +374,30 @@ def test_typing() -> None:
     assert parse(
         tokenize("var f(a, b): (Bool, Bool) => Bool = { a or b };")) == \
         TopLevel(Variable("f",
-                          Block(BinaryOp(Identifier("a"),
-                                         "or",
-                                         Identifier("b")),
-                                returns_last=True),
-                          function_def=Function("f",
-                                                Identifier("a"),
-                                                Identifier("b"),
-                                                ),
+                 Function("f",
+                          Identifier("a"),
+                          Identifier("b"),
+                          expr=Block(BinaryOp(Identifier("a"),
+                                              "or",
+                                              Identifier("b")),
+                                     returns_last=True,
+                                     ),
+
+                          ),
                           type=FunType(Bool(),
                                        Bool(),
-                                       return_type=Bool())
-                          ))
+                                       return_type=Bool()))
+                 )
 
     assert parse(
         tokenize("var f(a): (Bool) => Unit = { not a };")) == \
         TopLevel(Variable("f",
-                          Block(UnaryOp("not",
-                                        Identifier("a")),
-                                returns_last=True),
-                          function_def=Function("f",
-                                                Identifier("a"),
-                                                ),
+                          Function("f",
+                                   Identifier("a"),
+                                   expr=Block(UnaryOp("not",
+                                                      Identifier("a")),
+                                              returns_last=True),
+                                   ),
                           type=FunType(Bool(), return_type=Unit()),
                           )
                  )

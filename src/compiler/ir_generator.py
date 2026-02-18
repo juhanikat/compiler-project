@@ -50,7 +50,6 @@ def generate_ir(
     # in the interpreter and type checker.
     def visit(sym_table: SymTable[my_ir.IRVar], expr: my_ast.Expression) -> my_ir.IRVar:
         loc = expr.source_loc
-        print(expr)
         if not loc:
             raise Exception("Missing SourceLocation")
 
@@ -87,8 +86,10 @@ def generate_ir(
                 return ir_var
 
             case my_ast.Variable():
-                if expr.function_def:
-                    raise Exception("Not implemented!")
+                if isinstance(expr.value, my_ast.Function):
+                    visited_params = []
+                    for param in expr.value.params:
+                        visited_params.append(visit(sym_table, param))
                 value_ir = visit(sym_table, expr.value)
                 sym_table.add(expr.name, value_ir)
                 return var_unit
@@ -183,12 +184,33 @@ def generate_ir(
                 return var_unit
 
             case my_ast.Block():
-                block_sym_table = SymTable[my_ir.IRVar](locals={}, parent=None)
-                for name in reserved_names:
-                    block_sym_table.add(name, my_ir.IRVar(name))
+                block_sym_table = SymTable[my_ir.IRVar](
+                    locals={}, parent=sym_table)
 
                 for child_expr in expr.expressions:
                     visit(block_sym_table, child_expr)
+                return var_unit
+
+            case my_ast.FunctionCall():
+                func_sym_table = SymTable[my_ir.IRVar](
+                    locals={}, parent=sym_table)
+                func = sym_table.lookup(expr.name)
+                if func is None:
+                    raise Exception(
+                        f"Function '{expr.name}' not found in SymTable")
+                if not isinstance(func, my_ast.Function):
+                    raise Exception("Not a function!")
+
+                visited_args = []
+                for arg in expr.args:
+                    visited_args.append(visit(sym_table, arg))
+
+                for func_arg, visited_arg in zip(func.params, visited_args):
+                    if not isinstance(func_arg, my_ast.Identifier):
+                        raise Exception(
+                            f"Parameter '{func_arg}' set for function was not an identifier'")
+                func_sym_table.add(
+                    func_arg.name, visited_arg)
                 return var_unit
 
             case _:

@@ -197,21 +197,35 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
     def parse_function(for_new_var: bool, name: str, source_loc: SourceLocation) -> my_ast.Function | my_ast.FunctionCall:
         """If for_new_var is set to True, this is a function definition, not a function call."""
         consume("(")
-        params = []
-        # check if the function has any parameters
-        if peek().text != ")":
-            first_param = parse_expression()
-            params.append(first_param)
 
-            while peek().text == ",":
-                consume(",")
-                param = parse_expression()
-                params.append(param)
+        if for_new_var:
+            identifier_params: List[my_ast.Identifier] = []
+            if peek().text != ")":
+                first_param = parse_expression()
+                if not isinstance(first_param, my_ast.Identifier):
+                    raise Exception(f"{first_param} is not an Identifier!")
+                identifier_params.append(first_param)
+                while peek().text == ",":
+                    consume(",")
+                    param = parse_expression()
+                    if not isinstance(param, my_ast.Identifier):
+                        raise Exception(f"{param} is not an Identifier!")
+                    identifier_params.append(param)
+        else:
+            expr_params: List[my_ast.Expression] = []
+            if peek().text != ")":
+                first_param = parse_expression()
+                expr_params.append(first_param)
+                while peek().text == ",":
+                    consume(",")
+                    param = parse_expression()
+                    expr_params.append(param)
 
         consume(")")
         if for_new_var:
-            return my_ast.Function(name, *tuple(params), source_loc=source_loc)
-        return my_ast.FunctionCall(name, *tuple(params), source_loc=source_loc)
+            # expr is updated later in the Variable section
+            return my_ast.Function(name,  *tuple(identifier_params), expr=my_ast.Block(), source_loc=source_loc)
+        return my_ast.FunctionCall(name, *tuple(expr_params), source_loc=source_loc)
 
     def parse_unary() -> my_ast.UnaryOp:
         if peek().text == "not":
@@ -228,17 +242,13 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
     def parse_variable_declaration() -> my_ast.Variable:
         var_token = consume("var")
         var_type: my_types.Type | None = None
-        function_def: my_ast.Function | None = None
 
-        if peek().type == TokenType.IDENTIFIER:
-            parsed = parse_identifier(True)
-            if isinstance(parsed, my_ast.Function):
-                function_def = parsed
-            name = parsed.name
-
-        else:
+        if peek().type != TokenType.IDENTIFIER:
             raise Exception(
                 f'{peek().source_loc}: expected the name of the variable, but got "{peek().text}"')
+
+        parsed = parse_identifier(True)
+        name = parsed.name
 
         if peek().text == ":":
             # found typing information
@@ -259,19 +269,23 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
                 return_type = parse_type()
                 var_type = my_types.FunType(
                     *param_types, return_type=return_type)
-                if not function_def:
-                    raise Exception(
-                        "Found function typing info, but this is not a function definition!")
             else:
                 var_type = parse_type()
 
         consume("=")
-        value = parse_expression(True)
-        if function_def and not isinstance(value, my_ast.Block):
-            raise Exception(f"Function value can only be a Block")
+        value: my_ast.Expression | my_ast.Function
+        if isinstance(parsed, my_ast.Function):
+            parsed_block = parse_expression(True)
+            if not isinstance(parsed_block, my_ast.Block):
+                raise Exception("Function value was not a Block!")
+            parsed.expr = parsed_block
+            value = parsed
+        else:
+            value = parse_expression(True)
+
         if var_type:
-            return my_ast.Variable(name, value, function_def=function_def, type=var_type, source_loc=var_token.source_loc)
-        return my_ast.Variable(name, value, function_def=function_def, source_loc=var_token.source_loc)
+            return my_ast.Variable(name, value, type=var_type, source_loc=var_token.source_loc)
+        return my_ast.Variable(name, value, source_loc=var_token.source_loc)
 
     def parse_while_do() -> my_ast.WhileDo:
         while_token = consume("while")

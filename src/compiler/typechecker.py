@@ -87,18 +87,11 @@ def typecheck(node: my_ast.Expression | None) -> Type:
                 return value.return_type
 
             case my_ast.Variable():
-                if node.function_def:
-                    if not isinstance(node.value, my_ast.Block):
-                        raise Exception(
-                            "The value of a Function Variable was not a Block!")
+                if isinstance(node.value, my_ast.Function):
 
                     params: List[Int] = []
-                    for param in node.function_def.params:
+                    for param in node.value.params:
                         # NOTE: All params are assumed to be Ints, fix!
-                        if not isinstance(param, my_ast.Identifier):
-                            raise Exception(
-                                "Function has a parameter that is not an Identifier")
-
                         type_table.add(param.name, Int())
                         params.append(Int())
 
