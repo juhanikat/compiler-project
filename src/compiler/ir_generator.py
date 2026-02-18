@@ -86,12 +86,11 @@ def generate_ir(
                 return ir_var
 
             case my_ast.Variable():
-                if isinstance(expr.value, my_ast.Function):
-                    visited_params = []
-                    for param in expr.value.params:
-                        visited_params.append(visit(sym_table, param))
                 value_ir = visit(sym_table, expr.value)
                 sym_table.add(expr.name, value_ir)
+                return var_unit
+
+            case my_ast.Function():
                 return var_unit
 
             case my_ast.UnaryOp():
@@ -192,26 +191,28 @@ def generate_ir(
                 return var_unit
 
             case my_ast.FunctionCall():
-                func_sym_table = SymTable[my_ir.IRVar](
-                    locals={}, parent=sym_table)
                 func = sym_table.lookup(expr.name)
+                print(func)
                 if func is None:
                     raise Exception(
                         f"Function '{expr.name}' not found in SymTable")
-                if not isinstance(func, my_ast.Function):
-                    raise Exception("Not a function!")
+
+                var_result = new_var()
 
                 visited_args = []
                 for arg in expr.args:
                     visited_args.append(visit(sym_table, arg))
 
-                for func_arg, visited_arg in zip(func.params, visited_args):
-                    if not isinstance(func_arg, my_ast.Identifier):
-                        raise Exception(
-                            f"Parameter '{func_arg}' set for function was not an identifier'")
-                func_sym_table.add(
-                    func_arg.name, visited_arg)
-                return var_unit
+                if expr.name in ["print_int", "print_bool", "read_int"] and callable(func):
+                    ins.append(my_ir.Call(func, visited_args, var_result))
+                    return var_result
+
+                # only go here if function was not built in
+                func_sym_table = SymTable[my_ir.IRVar](
+                    locals={}, parent=sym_table)
+
+                ins.append(my_ir.Call(func, visited_args, var_result))
+                return var_result
 
             case _:
                 print(expr)
@@ -241,7 +242,3 @@ def generate_ir(
                    [var_final_result], new_var()))
 
     return ins
-
-
-reserved_names = set(DEFAULT_LOCALS.copy().keys())
-root_expr = parse(tokenize("1 + 2 * 3"))
