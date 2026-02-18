@@ -32,7 +32,7 @@ class TypeTable:
                 "while": Unit(),
                 "print_int": FunType(Int(), return_type=Unit()),
                 "print_bool": FunType(Bool(), return_type=Unit()),
-                # TODO: read_int
+                "read_int": FunType(return_type=Int())
             }
         if parent:
             self.parent = parent
@@ -93,7 +93,7 @@ def typecheck(node: my_ast.Expression | None) -> Type:
                 if isinstance(node.value, my_ast.Function):
                     params: List[Type] = []
                     if not isinstance(node.type, FunType):
-                        # TODO: if tpying information is not given, assume every param is an Int, should probably fix
+                        # TODO: if typing information is not given, assume every param is an Int, should probably fix
                         for param in node.value.params:
                             type_table.add(param.name, Int())
                             params.append(Int())
@@ -168,7 +168,8 @@ def typecheck(node: my_ast.Expression | None) -> Type:
                 if node.returns_last:
                     return_type = block_exprs[-1]
                     if not isinstance(return_type, (Int | Bool | Unit)):
-                        raise Exception("Block return type was not a basic type")
+                        raise Exception(
+                            "Block return type was not a basic type")
                     return return_type
                 return Unit()
 
