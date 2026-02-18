@@ -106,23 +106,27 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                 emit(f'jmp .L{insn.label.name}')
             case my_ir.CondJump():
                 emit(f'cmpq $0, {locals.get_ref(insn.cond)}')
-                emit(f'jne {insn.then_label}')
-                emit(f'jmp {insn.else_label}')
+                emit(f'jne .L{insn.then_label.name}')
+                emit(f'jmp .L{insn.else_label.name}')
             case my_ir.Call():
                 if insn.fun.name in intrinsics.all_intrinsics:
-                    args = intrinsics.IntrinsicArgs([
-                        locals.get_ref(insn.args[0]),
-                        locals.get_ref(insn.args[1])],
-                        r"%rax",
-                        emit)
+                    refs = []
+                    for arg in insn.args:
+                        refs.append(locals.get_ref(arg))
+                    args = intrinsics.IntrinsicArgs(refs,
+                                                    r"%rax",
+                                                    emit)
                     # call intrinsic function
                     intrinsics.all_intrinsics[insn.fun.name](args)
                 else:
-                    raise Exception("Not implemented!")
                     for param, register in zip(insn.args, param_registers):
                         emit(f'movq {locals.get_ref(param)}, {register}')
                     emit(f'callq {locals.get_ref(insn.fun)}')
                     emit(f'popq %rbp')
                     emit('ret')
 
+    emit('movq $0, %rax')
+    emit('movq %rbp, %rsp')
+    emit('popq %rbp')
+    emit('ret')
     return "\n".join(lines)

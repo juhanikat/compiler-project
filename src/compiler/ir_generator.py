@@ -91,6 +91,7 @@ def generate_ir(
                 return var_unit
 
             case my_ast.Function():
+                # NOTE: this is a function definition, not a call
                 return var_unit
 
             case my_ast.UnaryOp():
@@ -192,7 +193,6 @@ def generate_ir(
 
             case my_ast.FunctionCall():
                 func = sym_table.lookup(expr.name)
-                print(func)
                 if func is None:
                     raise Exception(
                         f"Function '{expr.name}' not found in SymTable")
@@ -206,13 +206,9 @@ def generate_ir(
                 if expr.name in ["print_int", "print_bool", "read_int"] and callable(func):
                     ins.append(my_ir.Call(func, visited_args, var_result))
                     return var_result
-
-                # only go here if function was not built in
-                func_sym_table = SymTable[my_ir.IRVar](
-                    locals={}, parent=sym_table)
-
-                ins.append(my_ir.Call(func, visited_args, var_result))
-                return var_result
+                else:
+                    ins.append(my_ir.Call(func, visited_args, var_result))
+                    return var_result
 
             case _:
                 print(expr)

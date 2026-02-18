@@ -18,6 +18,7 @@ def call_compiler(source_code: str) -> bytes:
     # Call your compiler here and return the compiled executable.
     # Raise an exception on compilation error.
     try:
+        print(generate_assembly(generate_ir(None, parse(tokenize(source_code)))))
         return assemble_and_get_executable(generate_assembly(generate_ir(None, parse(tokenize(source_code)))))
     except Exception as e:
         raise e
