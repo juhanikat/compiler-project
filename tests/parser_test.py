@@ -95,9 +95,10 @@ def test_if_then_else() -> None:
 
 
 def test_functions() -> None:
-    assert parse(tokenize("f(a, b) = { 1 }")) == Function(
+    assert parse(tokenize("var f(a, b) = { 1 }")) == Function(
         "f", Identifier("a"), Identifier("b"), expr=Block(Literal(1), returns_last=True))
-    assert parse(tokenize("g(a, b, c) = { a + b - c * d }")) == \
+
+    assert parse(tokenize("var g(a, b, c) = { a + b - c * d }")) == \
         Function("g",
                  Identifier("a"),
                  Identifier("b"),

@@ -96,9 +96,6 @@ def test_functions() -> None:
     with pytest.raises(Exception):
         interpret(parse(tokenize("var f() = f()")))
 
-    # TODO: functions can be assigned values other than Blocks once they have been created, fix later!
-    interpret(parse(tokenize("var f() = { true }; f = 2; f")))
-
 
 def test_built_in_funcs() -> None:
     assert interpret(parse(tokenize("print_int(3)"))) == None
@@ -106,4 +103,4 @@ def test_built_in_funcs() -> None:
         parse(tokenize("var f(i) = { print_int(i) }; f(150); true"))) == True
     assert interpret(parse(tokenize("print_bool(true)"))) == None
     # commented since otherwise input is lways needed when running tests
-    #assert isinstance(interpret(parse(tokenize("read_int()"))), int)
+    # assert isinstance(interpret(parse(tokenize("read_int()"))), int)

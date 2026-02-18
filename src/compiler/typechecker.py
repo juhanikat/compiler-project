@@ -81,6 +81,9 @@ def typecheck(node: my_ast.Expression | None) -> Type:
 
             case my_ast.Function():
                 value = type_table.lookup(node.name)
+                if not value:
+                    raise Exception(
+                        f"'{node.name}' does not exist in the type table")
                 if not isinstance(value, FunType):
                     raise Exception(
                         f"TypeTable has function {node.name}, but its value is not a FunType!")
@@ -88,20 +91,24 @@ def typecheck(node: my_ast.Expression | None) -> Type:
 
             case my_ast.Variable():
                 if isinstance(node.value, my_ast.Function):
+                    params: List[Type] = []
+                    if not isinstance(node.type, FunType):
+                        # TODO: if tpying information is not given, assume every param is an Int, should probably fix
+                        for param in node.value.params:
+                            type_table.add(param.name, Int())
+                            params.append(Int())
+                    else:
+                        for param, type_arg in zip(node.value.params, node.type.type_args):
+                            type_table.add(param.name, type_arg)
+                            params.append(type_arg)
 
-                    params: List[Int] = []
-                    for param in node.value.params:
-                        # NOTE: All params are assumed to be Ints, fix!
-                        type_table.add(param.name, Int())
-                        params.append(Int())
-
-                    value_type = get_type(node.value, type_table)
-                    if not isinstance(value_type, FunType):
+                    block_expr_type = get_type(node.value.expr, type_table)
+                    if not isinstance(block_expr_type, (Int | Bool | Unit)):
                         raise Exception(
-                            "Function's value type was not a FunType")
+                            "Function's value type was not a basic type")
 
                     type_table.add(node.name, FunType(
-                        *params, return_type=value_type.return_type))
+                        *params, return_type=block_expr_type))
                 else:
                     value_type = get_type(node.value, type_table)
                     type_table.add(node.name, value_type)
@@ -160,8 +167,10 @@ def typecheck(node: my_ast.Expression | None) -> Type:
 
                 if node.returns_last:
                     return_type = block_exprs[-1]
-                    return FunType(*block_exprs, return_type=return_type)
-                return FunType(*block_exprs, return_type=Unit())
+                    if not isinstance(return_type, (Int | Bool | Unit)):
+                        raise Exception("Block return type was not a basic type")
+                    return return_type
+                return Unit()
 
             case my_ast.TopLevel():
                 top_exprs: List[Type] = []

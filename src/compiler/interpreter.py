@@ -175,24 +175,26 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
             func = sym_table.lookup(node.name)
             if not func:
                 raise Exception(f"Function {node.name} is not defined")
-            if not isinstance(func, my_ast.Function):
-                raise Exception(f"Function {node.name} was not a function?")
 
             given_args = node.args
             if not isinstance(given_args, Iterable):
                 raise Exception(
                     f"The arguments given to '{node.name}' ({given_args}) is not an Iterable")
-            if len(given_args) > len(func.params):
-                raise Exception(
-                    f"Too many arguments for function '{node.name}'")
 
             # interpret the arguments given to the function
             interpreted_args = []
             for given_arg in given_args:
                 interpreted_args.append(interpret(given_arg, sym_table))
 
-            if node.name in ["print_int", "print_bool", "read_int"] and callable(func.expr):
-                return func.expr(*interpreted_args)
+            if node.name in ["print_int", "print_bool", "read_int"] and callable(func):
+                return func(*interpreted_args)
+            elif not isinstance(func, my_ast.Function):
+                raise Exception(f"Function {node.name} was not a function?")
+
+            # only go here if function was not built in
+            if len(given_args) > len(func.params):
+                raise Exception(
+                    f"Too many arguments for function '{node.name}'")
 
             func_sym_table = SymTable[Value](
                 locals={}, parent=sym_table)
