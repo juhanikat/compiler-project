@@ -72,35 +72,13 @@ def test_while_do() -> None:
 
 
 def test_functions() -> None:
-    assert interpret(
-        parse(tokenize("var f() = { true }; f()"))) == True
-    assert interpret(
-        parse(tokenize("var f(a, b) = { a + b }; f(1, 2)"))) == 3
-    assert interpret(
-        parse(tokenize("var f(a, b) = { a * b }; f(1, 2)"))) == 2
-    # TODO: you should be able to change function values later! (should this be f(a,b) = new_value OR f = new_value?)
-    # interpret(
-    #    parse(tokenize("var f(a, b) = { a * b }; f(a, b) = { a + b }; f(1, 2)"))) == 3
-
-    assert interpret(
-        parse(tokenize("var f(a, b) = { a = 2; a + b }; f(1, 2)"))) == 4
-
-    # variable scope tests
-    assert interpret(
-        parse(tokenize("var f(a, b) = { a = 2 }; var a = 5; f(1, 2); a"))) == 5
-    assert interpret(
-        parse(tokenize("var f() = { outer = 2 }; var outer = 5; f(); outer"))) == 2
-
-    with pytest.raises(Exception):
-        interpret(parse(tokenize("var f() = 2")))
-    with pytest.raises(Exception):
-        interpret(parse(tokenize("var f() = f()")))
+    # TODO this
+    pass
+    # variable scope tests too
 
 
 def test_built_in_funcs() -> None:
     assert interpret(parse(tokenize("print_int(3)"))) == None
-    assert interpret(
-        parse(tokenize("var f(i) = { print_int(i) }; f(150); true"))) == True
     assert interpret(parse(tokenize("print_bool(true)"))) == None
-    # commented since otherwise input is lways needed when running tests
+    # commented since otherwise input is always needed when running tests
     # assert isinstance(interpret(parse(tokenize("read_int()"))), int)

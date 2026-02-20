@@ -96,13 +96,13 @@ def test_if_then_else() -> None:
 
 def test_functions() -> None:
     assert parse(tokenize("g(a, b, c, d)")) == \
-        FunctionCall("f", Identifier("a"),
+        FunctionCall("g", Identifier("a"),
                      Identifier("b"),
                      Identifier("c"),
                      Identifier("d"))
 
     assert parse(tokenize("g(1 + 2)")) == \
-        FunctionCall("f", BinaryOp(Literal(1), '+', Literal(2)))
+        FunctionCall("g", BinaryOp(Literal(1), '+', Literal(2)))
 
 
 def test_unary_parsing() -> None:

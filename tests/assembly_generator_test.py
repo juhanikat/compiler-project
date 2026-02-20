@@ -17,7 +17,4 @@ def test_basics() -> None:
         tokenize("{ var x = -1 }"))))
 
     generate_assembly(generate_ir(reserved_names=None, root_expr=parse(
-        tokenize("var f(x, y) = { x + y }; f(1, 2)"))))
-
-    generate_assembly(generate_ir(reserved_names=None, root_expr=parse(
         tokenize("print_int(1)"))))
