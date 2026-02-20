@@ -58,6 +58,7 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
     locals = Locals(
         variables=get_all_ir_variables(instructions)
     )
+
     # functions will not have more parameters than 6
     param_registers = ['%rdi', '%rsi', '%rdx', '%rcx', '%r8', '%r9']
 

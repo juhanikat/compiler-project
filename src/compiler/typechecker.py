@@ -18,18 +18,18 @@ class TypeTable:
         else:
             self.locals = {
                 "+": FunType(Int(), Int(), return_type=Int()),
+                '-': FunType(Int(), Int(), return_type=Int()),
                 "unary_-": FunType(Int(), return_type=Int()),
                 "*": FunType(Int(), Int(), return_type=Int()),
                 "/": FunType(Int(), Int(), return_type=Int()),
                 "%": FunType(Int(), Int(), return_type=Int()),
-                "<": FunType(Int(), Int(), return_type=Int()),
-                "<=": FunType(Int(), Int(), return_type=Int()),
-                ">": FunType(Int(), Int(), return_type=Int()),
-                ">=": FunType(Int(), Int(), return_type=Int()),
+                "<": FunType(Int(), Int(), return_type=Bool()),
+                "<=": FunType(Int(), Int(), return_type=Bool()),
+                ">": FunType(Int(), Int(), return_type=Bool()),
+                ">=": FunType(Int(), Int(), return_type=Bool()),
                 "or": FunType(Bool(), Bool(), return_type=Bool()),
                 "and": FunType(Bool(), Bool(), return_type=Bool()),
                 "unary_not": FunType(Bool(), return_type=Bool()),
-                "while": Unit(),
                 "print_int": FunType(Int(), return_type=Unit()),
                 "print_bool": FunType(Bool(), return_type=Unit()),
                 "read_int": FunType(return_type=Int())
@@ -53,7 +53,7 @@ class TypeTable:
         return None
 
 
-def typecheck(node: my_ast.Expression | None) -> Type:
+def typecheck(node: my_ast.Expression | None, type_table: TypeTable | None = None) -> Type:
     """Uses get_type() to get the type of the node, then sets node.type to that type and returns the type."""
 
     def get_type(node: my_ast.Expression, type_table: TypeTable) -> Type:
@@ -80,12 +80,12 @@ def typecheck(node: my_ast.Expression | None) -> Type:
                 return value
 
             case my_ast.Variable():
-                value_type = get_type(node.value, type_table)
+                value_type = typecheck(node.value, type_table)
                 type_table.add(node.name, value_type)
                 return Unit()
 
             case my_ast.UnaryOp():
-                target_type = get_type(node.target, type_table)
+                target_type = typecheck(node.target, type_table)
                 if node.op == "-" and not isinstance(target_type, Int):
                     raise Exception("target for '-' was not an Int")
                 elif node.op == "not" and not isinstance(target_type, Bool):
@@ -93,8 +93,8 @@ def typecheck(node: my_ast.Expression | None) -> Type:
                 return target_type
 
             case my_ast.BinaryOp():
-                left_type = get_type(node.left, type_table)
-                right_type = get_type(node.right, type_table)
+                left_type = typecheck(node.left, type_table)
+                right_type = typecheck(node.right, type_table)
 
                 if node.op in ["==", "!=", "="]:
                     if left_type != right_type:
@@ -115,18 +115,19 @@ def typecheck(node: my_ast.Expression | None) -> Type:
                     return fun_type.return_type
 
             case my_ast.IfThen():
-                t1 = get_type(node.if_expr, type_table)
+                t1 = typecheck(node.if_expr, type_table)
                 if not isinstance(t1, Bool):
                     raise Exception()
-                t2 = get_type(node.then_expr, type_table)
-                return t2
+                t2 = typecheck(node.then_expr, type_table)
+                return Unit()
 
             case my_ast.IfThenElse():
-                t1 = get_type(node.if_expr, type_table)
+                t1 = typecheck(node.if_expr, type_table)
                 if not isinstance(t1, Bool):
-                    raise Exception()
-                t2 = get_type(node.then_expr, type_table)
-                t3 = get_type(node.else_expr, type_table)
+                    raise Exception(
+                        f"The type for '{node.if_expr}' was not a Bool")
+                t2 = typecheck(node.then_expr, type_table)
+                t3 = typecheck(node.else_expr, type_table)
                 if t2 != t3:
                     raise Exception()
                 return t2  # or t3, they are the same type
@@ -136,6 +137,9 @@ def typecheck(node: my_ast.Expression | None) -> Type:
 
             case my_ast.FunctionCall():
                 value = type_table.lookup(node.name)
+                if not value:
+                    raise Exception(
+                        f"'{node.name}' does not exist in the TypeTable")
                 if not isinstance(value, FunType):
                     raise Exception(
                         f"TypeTable has function {node.name}, but its value is not a FunType!")
@@ -145,7 +149,7 @@ def typecheck(node: my_ast.Expression | None) -> Type:
                 block_type_table = TypeTable(locals=None, parent=type_table)
                 block_exprs: List[Type] = []
                 for expr in node.expressions:
-                    t = get_type(expr, block_type_table)
+                    t = typecheck(expr, block_type_table)
                     block_exprs.append(t)
 
                 if node.returns_last:
@@ -159,7 +163,7 @@ def typecheck(node: my_ast.Expression | None) -> Type:
             case my_ast.TopLevel():
                 top_exprs: List[Type] = []
                 for expr in node.expressions:
-                    t = get_type(expr, type_table)
+                    t = typecheck(expr, type_table)
                     top_exprs.append(t)
 
                 if node.returns_last:
@@ -171,6 +175,8 @@ def typecheck(node: my_ast.Expression | None) -> Type:
 
     if node is None:
         return Unit()
-    node_type = get_type(node, TypeTable())
+    if type_table is None:
+        type_table = TypeTable()
+    node_type = get_type(node, type_table)
     node.type = node_type
     return node_type

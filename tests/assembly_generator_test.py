@@ -10,6 +10,9 @@ def test_basics() -> None:
         tokenize("{var x = true; if x then 1 else 2; }"))))
     generate_assembly(generate_ir(reserved_names=None, root_expr=parse(
         tokenize("var x = true; if x then 1 else 2; "))))
+    
+    print(generate_assembly(generate_ir(reserved_names=None, root_expr=parse(
+        tokenize("var x = 1; if x < 2 then true else false; ")))))
 
     generate_assembly(generate_ir(reserved_names=None, root_expr=parse(
         tokenize("{ var x = 1 + 2; x = 1 }"))))

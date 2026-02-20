@@ -1,6 +1,6 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from compiler import my_ast, my_ir
 from compiler.interpreter import DEFAULT_LOCALS, SymTable, Value
@@ -79,7 +79,9 @@ def generate_ir(
                 return var
 
             case my_ast.Identifier():
+                print(expr)
                 ir_var = sym_table.lookup(expr.name)
+                print(ir_var)
                 if not ir_var:
                     raise Exception(f"{expr.name} not found in IR Table")
                 return ir_var
@@ -174,16 +176,29 @@ def generate_ir(
                 return var_unit
 
             case my_ast.TopLevel():
+                if len(expr.expressions) == 0:
+                    return var_unit
+                visited_toplevel_exprs: List[my_ir.IRVar] = []
                 for child_expr in expr.expressions:
-                    visit(sym_table, child_expr)
+                    visited_toplevel_exprs.append(visit(sym_table, child_expr))
+
+                if expr.returns_last:
+                    return visited_toplevel_exprs[-1]
                 return var_unit
 
             case my_ast.Block():
+                if len(expr.expressions) == 0:
+                    return var_unit
                 block_sym_table = SymTable[my_ir.IRVar](
                     locals={}, parent=sym_table)
 
+                visited_block_exprs: List[my_ir.IRVar] = []
                 for child_expr in expr.expressions:
-                    visit(block_sym_table, child_expr)
+                    visited_block_exprs.append(
+                        visit(block_sym_table, child_expr))
+
+                if expr.returns_last:
+                    return visited_block_exprs[-1]
                 return var_unit
 
             case my_ast.FunctionCall():
@@ -221,16 +236,19 @@ def generate_ir(
         root_sym_table.add(name, my_ir.IRVar(name))
 
     # Start visiting the AST from the root. NOTE: Also typecheck the root here.
-    typecheck(root_expr)
+    typecheck(root_expr, None)
+    print("ROOT EXPR AND TUPE!!!!!")
+    print(root_expr)
+    print(root_expr.type)
     var_final_result = visit(root_sym_table, root_expr)
 
     # Add IR code to print the result, based on the type assigned earlier
     # by the type checker.
-    if root_expr.type == Int:
+    if root_expr.type == Int():
         ins.append(my_ir.Call(my_ir.IRVar("print_int"),
                    [var_final_result], new_var()))
-    elif root_expr.type == Bool:
+    elif root_expr.type == Bool():
         ins.append(my_ir.Call(my_ir.IRVar("print_bool"),
                    [var_final_result], new_var()))
-
+    # print(root_sym_table.lookup("print_int"))
     return ins

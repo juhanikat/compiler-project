@@ -19,7 +19,7 @@ def call_compiler(source_code: str) -> bytes:
     # Raise an exception on compilation error.
     try:
         parsed_code = parse(tokenize(source_code))
-        typecheck(parsed_code)
+        typecheck(parsed_code, None)
         assembly_code = generate_assembly(
             generate_ir(None, parsed_code))
         return assemble_and_get_executable(assembly_code)
