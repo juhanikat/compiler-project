@@ -186,6 +186,8 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
             if node.name in ["print_int", "print_bool", "read_int"] and callable(func):
                 return func(*interpreted_args)
 
+            raise Exception("Custom functions not implemented!")
+            """
             # only go here if function was not built in
             if len(interpreted_args) > len(func.params):
                 raise Exception(
@@ -203,6 +205,7 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
                 func_sym_table.add(
                     func_param.name, interpreted_arg)
             return interpret(func.expr, func_sym_table)
+            """
 
         case _:
             raise Exception(

@@ -22,7 +22,7 @@ def call_compiler(source_code: str) -> bytes:
         typecheck(parsed_code)
         assembly_code = generate_assembly(
             generate_ir(None, parsed_code))
-        return assemble_and_get_executable(generate_assembly(assembly_code))
+        return assemble_and_get_executable(assembly_code)
     except Exception as e:
         raise e
 
