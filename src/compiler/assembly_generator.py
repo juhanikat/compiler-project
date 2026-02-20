@@ -124,7 +124,10 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                 else:
                     for param, register in zip(insn.args, param_registers):
                         emit(f'movq {locals.get_ref(param)}, {register}')
-                    emit(f'callq *{locals.get_ref(insn.fun)}')
+                    if insn.fun.name in ["print_int", "print_bool", "read_int"]:
+                        emit(f"callq {insn.fun.name}")
+                    else:
+                        emit(f'callq *{locals.get_ref(insn.fun)}')
                     emit(f'popq %rbp')
                     emit('ret')
             case _:
