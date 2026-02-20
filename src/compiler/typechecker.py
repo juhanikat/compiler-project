@@ -84,16 +84,22 @@ def typecheck(node: my_ast.Expression | None) -> Type:
                 type_table.add(node.name, value_type)
                 return Unit()
 
+            case my_ast.UnaryOp():
+                target_type = get_type(node.target, type_table)
+                if node.op == "-" and not isinstance(target_type, Int):
+                    raise Exception("target for '-' was not an Int")
+                elif node.op == "not" and not isinstance(target_type, Bool):
+                    raise Exception("target for 'not' was not a Bool")
+                return target_type
+
             case my_ast.BinaryOp():
                 left_type = get_type(node.left, type_table)
                 right_type = get_type(node.right, type_table)
 
-                if node.op == "==":
+                if node.op in ["==", "!=", "="]:
                     if left_type != right_type:
                         raise TypeError()
-                if node.op == "!=":
-                    if left_type != right_type:
-                        raise TypeError()
+                    return left_type
                 else:
                     fun_type = type_table.lookup(node.op)
 
@@ -107,6 +113,13 @@ def typecheck(node: my_ast.Expression | None) -> Type:
                         raise TypeError(
                             f"Expected argument 2 to be {fun_type.type_args[1]}, but got {right_type}")
                     return fun_type.return_type
+
+            case my_ast.IfThen():
+                t1 = get_type(node.if_expr, type_table)
+                if not isinstance(t1, Bool):
+                    raise Exception()
+                t2 = get_type(node.then_expr, type_table)
+                return t2
 
             case my_ast.IfThenElse():
                 t1 = get_type(node.if_expr, type_table)
@@ -153,6 +166,7 @@ def typecheck(node: my_ast.Expression | None) -> Type:
                     return top_exprs[-1]
                 return Unit()
 
+        print(node)
         raise Exception("No match")
 
     if node is None:

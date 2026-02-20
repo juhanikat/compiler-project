@@ -5,6 +5,7 @@ from compiler.tokenizer import tokenize
 
 
 def test_basics() -> None:
+    # simply test that program does not raise an error
     generate_assembly(generate_ir(reserved_names=None, root_expr=parse(
         tokenize("{var x = true; if x then 1 else 2; }"))))
     generate_assembly(generate_ir(reserved_names=None, root_expr=parse(

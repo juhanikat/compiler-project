@@ -7,6 +7,7 @@ from compiler.interpreter import DEFAULT_LOCALS, SymTable, Value
 from compiler.my_types import Bool, Int, Unit
 from compiler.parser import parse
 from compiler.tokenizer import SourceLocation, tokenize
+from compiler.typechecker import typecheck
 
 
 def generate_ir(
@@ -219,7 +220,8 @@ def generate_ir(
     for name in reserved_names:
         root_sym_table.add(name, my_ir.IRVar(name))
 
-    # Start visiting the AST from the root.
+    # Start visiting the AST from the root. NOTE: Also typecheck the root here.
+    typecheck(root_expr)
     var_final_result = visit(root_sym_table, root_expr)
 
     # Add IR code to print the result, based on the type assigned earlier
