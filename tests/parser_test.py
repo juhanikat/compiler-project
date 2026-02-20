@@ -1,8 +1,8 @@
 import pytest
 
-from compiler.my_ast import (BinaryOp, Block, EmptyExpression, Function,
-                             FunctionCall, Identifier, IfThen, IfThenElse,
-                             Literal, TopLevel, UnaryOp, Variable, WhileDo)
+from compiler.my_ast import (BinaryOp, Block, EmptyExpression, FunctionCall,
+                             Identifier, IfThen, IfThenElse, Literal, TopLevel,
+                             UnaryOp, Variable, WhileDo)
 from compiler.my_types import Bool, FunType, Int, Unit
 from compiler.parser import parse
 from compiler.tokenizer import tokenize
@@ -95,28 +95,14 @@ def test_if_then_else() -> None:
 
 
 def test_functions() -> None:
-    assert parse(tokenize("var f(a, b) = { 1 }")) == Variable("f", Function(
-        "f", Identifier("a"), Identifier("b"), expr=Block(Literal(1), returns_last=True)))
+    assert parse(tokenize("g(a, b, c, d)")) == \
+        FunctionCall("f", Identifier("a"),
+                     Identifier("b"),
+                     Identifier("c"),
+                     Identifier("d"))
 
-    assert parse(tokenize("var g(a, b, c, d) = { a + b - c * d }")) == \
-        Variable("g", Function("g",
-                 Identifier("a"),
-                 Identifier("b"),
-                 Identifier("c"),
-                 Identifier("d"),
-                 expr=Block(
-                     BinaryOp(BinaryOp(Identifier("a"),
-                                       "+",
-                                       Identifier("b")),
-                              "-",
-                              BinaryOp(Identifier("c"),
-                                       "*",
-                                       Identifier("d"))
-                              ),
-                     returns_last=True
-                 )
-                 )
-                 )
+    assert parse(tokenize("g(1 + 2)")) == \
+        FunctionCall("f", BinaryOp(Literal(1), '+', Literal(2)))
 
 
 def test_unary_parsing() -> None:
@@ -373,46 +359,9 @@ def test_typing() -> None:
                  Identifier("x"),
                  returns_last=True)
 
-    assert parse(
-        tokenize("var f(a, b): (Bool, Bool) => Bool = { a or b };")) == \
-        TopLevel(Variable("f",
-                 Function("f",
-                          Identifier("a"),
-                          Identifier("b"),
-                          expr=Block(BinaryOp(Identifier("a"),
-                                              "or",
-                                              Identifier("b")),
-                                     returns_last=True,
-                                     ),
-
-                          ),
-                          type=FunType(Bool(),
-                                       Bool(),
-                                       return_type=Bool()))
-                 )
-
-    assert parse(
-        tokenize("var f(a): (Bool) => Unit = { not a };")) == \
-        TopLevel(Variable("f",
-                          Function("f",
-                                   Identifier("a"),
-                                   expr=Block(UnaryOp("not",
-                                                      Identifier("a")),
-                                              returns_last=True),
-                                   ),
-                          type=FunType(Bool(), return_type=Unit()),
-                          )
-                 )
-
-    # TODO: make this work!
-    # parse(tokenize("{ var f: (Int) => Unit = print_int; f(123) }"))
+    # TODO: test function typing?
 
     with pytest.raises(Exception):
         parse(tokenize("var x: ABC = true"))
     with pytest.raises(Exception):
         parse(tokenize("var x: bool = true"))
-
-    parse(tokenize("var f(x): () => Int = { 2 * 2 }"))
-    with pytest.raises(Exception):
-        # no return type
-        parse(tokenize("var f(x): (Int) = { x * 2 }"))

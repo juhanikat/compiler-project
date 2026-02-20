@@ -229,7 +229,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
             raise Exception(
                 f'{peek().source_loc}: expected the name of the variable, but got "{peek().text}"')
 
-        parsed = parse_identifier(True)
+        parsed = parse_identifier()
         name = parsed.name
 
         if peek().text == ":":
@@ -255,7 +255,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
                 var_type = parse_type()
 
         consume("=")
-        value = parse_expression(True)
+        value = parse_expression()
 
         if var_type:
             return my_ast.Variable(name, value, type=var_type, source_loc=var_token.source_loc)

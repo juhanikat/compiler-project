@@ -18,11 +18,13 @@ def call_compiler(source_code: str) -> bytes:
     # Call your compiler here and return the compiled executable.
     # Raise an exception on compilation error.
     try:
-        print(generate_assembly(generate_ir(None, parse(tokenize(source_code)))))
-        return assemble_and_get_executable(generate_assembly(generate_ir(None, parse(tokenize(source_code)))))
+        parsed_code = parse(tokenize(source_code))
+        typecheck(parsed_code)
+        assembly_code = generate_assembly(
+            generate_ir(None, parsed_code))
+        return assemble_and_get_executable(generate_assembly(assembly_code))
     except Exception as e:
         raise e
-    raise NotImplementedError("Compiler not implemented")
 
 
 def main() -> int:
