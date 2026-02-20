@@ -78,8 +78,6 @@ def generate_ir(
                 return var
 
             case my_ast.Identifier():
-                # Look up the IR variable that corresponds to
-                # the source code variable.
                 ir_var = sym_table.lookup(expr.name)
                 if not ir_var:
                     raise Exception(f"{expr.name} not found in IR Table")
@@ -88,10 +86,6 @@ def generate_ir(
             case my_ast.Variable():
                 value_ir = visit(sym_table, expr.value)
                 sym_table.add(expr.name, value_ir)
-                return var_unit
-
-            case my_ast.Function():
-                # NOTE: this is a function definition, not a call
                 return var_unit
 
             case my_ast.UnaryOp():

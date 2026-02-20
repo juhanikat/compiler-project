@@ -133,23 +133,6 @@ class Block(Expression):
 
 
 @dataclass(init=False)
-class Function(Expression):
-    """Used for function definitions as opposed to function calls."""
-    name: str
-    params: Tuple[Identifier, ...]
-    expr: Block
-
-    def __init__(self, name: str, *params: Identifier, expr: Block, source_loc: SourceLocation | None = None) -> None:
-        super().__init__(source_loc=source_loc)
-        self.name = name
-        self.params = params
-        self.expr = expr
-
-    def __eq__(self, value: Any) -> bool:
-        return super().__eq__(value)
-
-
-@dataclass(init=False)
 class TopLevel(Expression):
     """This is identical to a Block, except it does not start and end with brackets {}, and it doesn't have the returns_last flag."""
     expressions: Tuple[Expression, ...]

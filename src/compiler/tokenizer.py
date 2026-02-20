@@ -21,8 +21,8 @@ class SourceLocation:
 
     def __repr__(self) -> str:
         if self.any:
-            return f"(any=True)"
-        return f"({self.line}, {self.column})"
+            return f"loc=(any=True)"
+        return f"loc=({self.line}, {self.column})"
 
 
 @dataclass

@@ -109,6 +109,8 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                 emit(f'jne .L{insn.then_label.name}')
                 emit(f'jmp .L{insn.else_label.name}')
             case my_ir.Call():
+                if len(insn.args) > 6:
+                    raise Exception("Max 6 arguments for functions")
                 if insn.fun.name in intrinsics.all_intrinsics:
                     refs = []
                     for arg in insn.args:
@@ -121,9 +123,11 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                 else:
                     for param, register in zip(insn.args, param_registers):
                         emit(f'movq {locals.get_ref(param)}, {register}')
-                    emit(f'callq {locals.get_ref(insn.fun)}')
+                    emit(f'callq *{locals.get_ref(insn.fun)}')
                     emit(f'popq %rbp')
                     emit('ret')
+            case _:
+                raise Exception("Not implemented!")
 
     emit('movq $0, %rax')
     emit('movq %rbp, %rsp')
