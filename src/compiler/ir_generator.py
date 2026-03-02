@@ -79,9 +79,7 @@ def generate_ir(
                 return var
 
             case my_ast.Identifier():
-                print(expr)
                 ir_var = sym_table.lookup(expr.name)
-                print(ir_var)
                 if not ir_var:
                     raise Exception(f"{expr.name} not found in IR Table")
                 return ir_var
@@ -237,9 +235,6 @@ def generate_ir(
 
     # Start visiting the AST from the root. NOTE: Also typecheck the root here.
     typecheck(root_expr, None)
-    print("ROOT EXPR AND TUPE!!!!!")
-    print(root_expr)
-    print(root_expr.type)
     var_final_result = visit(root_sym_table, root_expr)
 
     # Add IR code to print the result, based on the type assigned earlier

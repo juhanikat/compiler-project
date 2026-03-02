@@ -23,12 +23,15 @@ def test_interpreter_basics() -> None:
 
 def test_variables() -> None:
     assert interpret(parse(tokenize("var x = 3; x"))) == 3
+    assert interpret(parse(tokenize("var x = 50; x = x; x"))) == 50
     assert interpret(parse(tokenize("var x = 3; var y = 4; x + y"))) == 7
     assert interpret(parse(tokenize("var x = 3; var y = 4; x = y"))) == None
     assert interpret(parse(tokenize("var x = 1; { x = 2; x }"))) == 2
     assert interpret(parse(tokenize("var x = 2; x = (x + -2); x"))) == 0
     assert interpret(
         parse(tokenize("var x = 3; var y = 4; x = y; x + y + x"))) == 12
+    assert interpret(
+        parse(tokenize("var x = 1; var y = 23; x = y; x + y"))) == 46
     with pytest.raises(Exception):
         interpret(parse(tokenize("var x = 3; 2 = x")))
 

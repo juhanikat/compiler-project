@@ -117,10 +117,11 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                     for arg in insn.args:
                         refs.append(locals.get_ref(arg))
                     args = intrinsics.IntrinsicArgs(refs,
-                                                    r"%rax",
+                                                    r'%rax',
                                                     emit)
                     # call intrinsic function
                     intrinsics.all_intrinsics[insn.fun.name](args)
+                    emit(f'movq %rax, {locals.get_ref(insn.dest)}')
                 else:
                     for param, register in zip(insn.args, param_registers):
                         emit(f'movq {locals.get_ref(param)}, {register}')
@@ -128,8 +129,6 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                         emit(f"callq {insn.fun.name}")
                     else:
                         emit(f'callq *{locals.get_ref(insn.fun)}')
-                    emit(f'popq %rbp')
-                    emit('ret')
             case _:
                 raise Exception("Not implemented!")
 
@@ -137,4 +136,5 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
     emit('movq %rbp, %rsp')
     emit('popq %rbp')
     emit('ret')
+    print("\n".join(lines))
     return "\n".join(lines)

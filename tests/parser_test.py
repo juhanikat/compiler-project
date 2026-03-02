@@ -210,6 +210,13 @@ def test_variable_declaration() -> None:
     assert parse(tokenize("var x = 1")) == Variable("x", Literal(1))
     assert parse(tokenize("var x = 3 * 4")) == Variable("x",
                                                         BinaryOp(Literal(3), "*", Literal(4)))
+
+    assert parse(tokenize("var x = 1; var y = 23; x = y; x + y")) == \
+        TopLevel(Variable("x", Literal(1)),
+                 Variable("y", Literal(23)),
+                 BinaryOp(Identifier("x"), "=", Identifier("y")),
+                 BinaryOp(Identifier("x"), "+", Identifier("y")), returns_last=True)
+
     assert parse(tokenize("var x = { var y = 1; y }")) == \
         Variable("x",
                  Block(Variable("y",
