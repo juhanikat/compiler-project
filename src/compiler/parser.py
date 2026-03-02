@@ -213,11 +213,14 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
         if peek().text == "not":
             not_token = consume("not")
             target = parse_expression()
-            return my_ast.UnaryOp("not", target, source_loc=not_token.source_loc)
+            if not isinstance(target, (my_ast.Identifier, my_ast.Literal)):
+                raise Exception(
+                    "UnaryOp target was not an Identifier or a Literal")
+            return my_ast.UnaryOp("unary_not", target, source_loc=not_token.source_loc)
         elif peek().text == "-":
             minus_token = consume("-")
             target = parse_expression()
-            return my_ast.UnaryOp("-", target, source_loc=minus_token.source_loc)
+            return my_ast.UnaryOp("unary_-", target, source_loc=minus_token.source_loc)
         raise Exception(
             f'{peek().source_loc}: expected "not" or "-", but got "{peek().text}"')
 

@@ -124,11 +124,25 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                     emit(f'movq %rax, {locals.get_ref(insn.dest)}')
                 else:
                     for param, register in zip(insn.args, param_registers):
+                        print(param)
+                        print(register)
                         emit(f'movq {locals.get_ref(param)}, {register}')
                     if insn.fun.name in ["print_int", "print_bool", "read_int"]:
                         emit(f"callq {insn.fun.name}")
                     else:
-                        emit(f'callq *{locals.get_ref(insn.fun)}')
+                        refs = []
+                        for arg in insn.args:
+                            refs.append(locals.get_ref(arg))
+                        match insn.fun.name:
+                            case "or":
+                                # %rax will contain the result
+                                emit(f"movq {refs[1]}, %rax")
+                                emit(f"orq {refs[0]}, %rax")
+                            case "and":
+                                emit(f"movq {refs[1]}, %rax")
+                                emit(f"andq {refs[0]}, %rax")
+                        # finally, move the contents of %rax to the given destination
+                        emit(f'movq %rax, {locals.get_ref(insn.dest)}')
             case _:
                 raise Exception("Not implemented!")
 
