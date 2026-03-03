@@ -11,6 +11,7 @@ left_associative_binary_operators: List[List[str]] = [
     ['<', '<=', '>', '>='],
     ['+', '-'],
     ['*', '/', '%'],
+    ['-', 'not'],
     # all identifiers are in this spot
 ]
 
@@ -218,18 +219,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
             raise Exception(
                 f'{peek().source_loc}: expected "not" or "-", but got "{peek().text}"')
 
-        target: my_ast.Identifier | my_ast.Literal | my_ast.FunctionCall | None = None
-        if peek().type == TokenType.IDENTIFIER:
-            target = parse_identifier()
-            if isinstance(target, my_ast.FunctionCall):
-                raise Exception(
-                    f"Function is an invalid target for '{op_token.text}'")
-        elif peek().type == TokenType.LITERAL:
-            target = parse_literal()
-        else:
-            raise Exception(
-                "UnaryOp target was not an Identifier or a Literal")
-        print(f"unary_{op_token.text}")
+        target = parse_factor()
         return my_ast.UnaryOp(f"unary_{op_token.text}", target, source_loc=op_token.source_loc)
 
     def parse_variable_declaration() -> my_ast.Variable:

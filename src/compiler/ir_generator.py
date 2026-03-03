@@ -203,12 +203,8 @@ def generate_ir(
                 for arg in expr.args:
                     visited_args.append(visit(sym_table, arg))
 
-                if expr.name in ["print_int", "print_bool", "read_int"] and callable(func):
-                    ins.append(my_ir.Call(func, visited_args, var_result))
-                    return var_result
-                else:
-                    ins.append(my_ir.Call(func, visited_args, var_result))
-                    return var_result
+                ins.append(my_ir.Call(func, visited_args, var_result))
+                return var_result
 
             case _:
                 print(expr)
