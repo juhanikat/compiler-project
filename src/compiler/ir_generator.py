@@ -153,14 +153,14 @@ def generate_ir(
                 l_end = new_label(loc=loc)
 
                 var_cond = visit(sym_table, expr.if_expr)
-                ins.append(my_ir.CondJump(var_cond, l_then, l_end, loc=loc))
+                ins.append(my_ir.CondJump(var_cond, l_then, l_else, loc=loc))
 
                 ins.append(l_then)
                 visit(sym_table, expr.then_expr)
                 ins.append(my_ir.Jump(l_end, loc=loc))
 
                 ins.append(l_else)
-                visit(sym_table, expr.then_expr)
+                visit(sym_table, expr.else_expr)
 
                 ins.append(l_end)
                 return var_unit
