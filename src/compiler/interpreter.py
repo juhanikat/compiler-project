@@ -99,7 +99,7 @@ def interpret(node: my_ast.Expression | None, sym_table: SymTable | None = None)
 
         case my_ast.UnaryOp():
             target: Any = interpret(node.target, sym_table)
-            unary_func = sym_table.lookup("unary_" + node.op)
+            unary_func = sym_table.lookup(node.op)
 
             if not unary_func:
                 raise Exception(f"Invalid operator '{node.op}' for UnaryOp")

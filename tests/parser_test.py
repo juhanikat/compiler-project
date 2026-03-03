@@ -106,8 +106,11 @@ def test_functions() -> None:
 
 
 def test_unary_parsing() -> None:
-    assert parse(tokenize("-a")) == UnaryOp("-", Identifier("a"))
-    assert parse(tokenize("not b")) == UnaryOp("not", Identifier("b"))
+    assert parse(tokenize("-a")) == UnaryOp("unary_-", Identifier("a"))
+    assert parse(tokenize("not b")) == UnaryOp("unary_not", Identifier("b"))
+    assert parse(tokenize("-1 + -2")) == BinaryOp(UnaryOp("unary_-", Literal(1)),
+                                                  "+",
+                                                  UnaryOp("unary_-", Literal(2)))
 
 
 def test_assignment_operator() -> None:

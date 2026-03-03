@@ -124,12 +124,13 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                     emit(f'movq %rax, {locals.get_ref(insn.dest)}')
                 else:
                     for param, register in zip(insn.args, param_registers):
-                        print(param)
-                        print(register)
+                        # put arguments into registers
                         emit(f'movq {locals.get_ref(param)}, {register}')
                     if insn.fun.name in ["print_int", "print_bool", "read_int"]:
+                        # special case for external functions
                         emit(f"callq {insn.fun.name}")
                     else:
+                        # all normal functions
                         refs = []
                         for arg in insn.args:
                             refs.append(locals.get_ref(arg))
@@ -150,5 +151,6 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
     emit('movq %rbp, %rsp')
     emit('popq %rbp')
     emit('ret')
+
     print("\n".join(lines))
     return "\n".join(lines)

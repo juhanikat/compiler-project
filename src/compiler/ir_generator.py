@@ -91,12 +91,13 @@ def generate_ir(
 
             case my_ast.UnaryOp():
                 visited_target = visit(sym_table, expr.target)
-                print("SSSSS")
-                print(visited_target)
                 var_op = sym_table.lookup(expr.op)
+                if not var_op:
+                    raise Exception(f"{expr.op} not in SymTable")
                 var_result = new_var()
                 ins.append(my_ir.Call(
                     var_op, [visited_target], var_result, loc=loc))
+                return var_result
 
             case my_ast.BinaryOp():
                 if expr.op == "=":
