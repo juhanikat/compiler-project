@@ -59,7 +59,8 @@ def tokenize(source_code: str) -> list[Token]:
     other_patterns = [
         re.compile(r"\s+"),
         re.compile(r"\n"),
-        re.compile(r"#.*")  # Comments
+        re.compile(r"#.*"),  # Comments
+        re.compile(r"//.*")  # Comments
     ]
 
     # (, ), {, }, ,, ;
@@ -88,17 +89,17 @@ def tokenize(source_code: str) -> list[Token]:
             if match:
                 return Token(match.group(
                 ), TokenType.PUNCTUATION, SourceLocation(line, column))
-        for operator_pattern in operator_patterns:
-            match = re.match(operator_pattern, source_code)
-            if match:
-                return Token(match.group(
-                ), TokenType.OPERATOR, SourceLocation(line, column))
-        # this is before the punctuation loop because of \n
+         # this is before the operator loop because of //
         for other_pattern in other_patterns:
             match = re.match(other_pattern, source_code)
             if match:
                 return Token(match.group(
                 ), TokenType.OTHER, SourceLocation(line, column))
+        for operator_pattern in operator_patterns:
+            match = re.match(operator_pattern, source_code)
+            if match:
+                return Token(match.group(
+                ), TokenType.OPERATOR, SourceLocation(line, column))
 
         return None
 

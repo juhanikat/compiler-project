@@ -3,7 +3,7 @@ from types import NoneType
 from typing import Dict, List, Self
 
 from compiler import my_ast
-from compiler.my_types import Bool, FunType, Int, Type, Unit
+from compiler.my_types import BasicType, Bool, FunType, Int, Type, Unit
 
 
 @dataclass(init=False)
@@ -33,6 +33,7 @@ class TypeTable:
                 "print_int": FunType(Int(), return_type=Unit()),
                 "print_bool": FunType(Bool(), return_type=Unit()),
                 "read_int": FunType(return_type=Int())
+                # "==" and "!=" are a special case inside the BinaryOp() match block
             }
         if parent:
             self.parent = parent
@@ -76,7 +77,7 @@ def typecheck(node: my_ast.Expression | None, type_table: TypeTable | None = Non
                 value = type_table.lookup(node.name)
                 if not value:
                     raise Exception(
-                        f"'{node.name}' does not exist in the type table")
+                        f"'{node.name}' is not defined")
                 return value
 
             case my_ast.Variable():
@@ -96,28 +97,32 @@ def typecheck(node: my_ast.Expression | None, type_table: TypeTable | None = Non
                 left_type = typecheck(node.left, type_table)
                 right_type = typecheck(node.right, type_table)
 
-                if node.op in ["==", "!=", "="]:
+                if node.op == "=":
                     if left_type != right_type:
                         raise TypeError()
                     return left_type
-                else:
-                    fun_type = type_table.lookup(node.op)
+                elif node.op in ["==", "!="]:
+                    if left_type != right_type:
+                        raise TypeError()
+                    return Bool()
 
-                    if not isinstance(fun_type, FunType):
-                        raise Exception(
-                            f"'{node.op}' does not have a matching type in the TypeTable")
-                    if left_type.__class__ != fun_type.type_args[0].__class__:
-                        raise TypeError(
-                            f"Expected argument 1 to be {fun_type.type_args[0]}, but got {left_type}")
-                    if right_type.__class__ != fun_type.type_args[1].__class__:
-                        raise TypeError(
-                            f"Expected argument 2 to be {fun_type.type_args[1]}, but got {right_type}")
-                    return fun_type.return_type
+                fun_type = type_table.lookup(node.op)
+
+                if not isinstance(fun_type, FunType):
+                    raise Exception(
+                        f"'{node.op}' does not have a matching type in the TypeTable")
+                if left_type.__class__ != fun_type.type_args[0].__class__:
+                    raise TypeError(
+                        f"Expected argument 1 to be {fun_type.type_args[0]}, but got {left_type}")
+                if right_type.__class__ != fun_type.type_args[1].__class__:
+                    raise TypeError(
+                        f"Expected argument 2 to be {fun_type.type_args[1]}, but got {right_type}")
+                return fun_type.return_type
 
             case my_ast.IfThen():
                 t1 = typecheck(node.if_expr, type_table)
                 if not isinstance(t1, Bool):
-                    raise Exception()
+                    raise Exception("If expression value was not a Bool")
                 t2 = typecheck(node.then_expr, type_table)
                 return Unit()
 
@@ -129,7 +134,8 @@ def typecheck(node: my_ast.Expression | None, type_table: TypeTable | None = Non
                 t2 = typecheck(node.then_expr, type_table)
                 t3 = typecheck(node.else_expr, type_table)
                 if t2 != t3:
-                    raise Exception()
+                    raise Exception(
+                        "Then expr and else expr are not the same type")
                 return t2  # or t3, they are the same type
 
             case my_ast.WhileDo():
@@ -171,7 +177,7 @@ def typecheck(node: my_ast.Expression | None, type_table: TypeTable | None = Non
                 return Unit()
 
         print(node)
-        raise Exception("No match")
+        raise Exception("No typecheck match for this Expression type")
 
     if node is None:
         return Unit()

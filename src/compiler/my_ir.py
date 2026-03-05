@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 from compiler import my_ast
 from compiler.interpreter import DEFAULT_LOCALS, SymTable, Value
-from compiler.my_types import Bool, Int, Unit
+from compiler.my_types import Bool, Int, Type, Unit
 from compiler.parser import parse
 from compiler.tokenizer import SourceLocation, tokenize
 
@@ -15,7 +15,7 @@ class IRVar:
     name: str
 
     def __str__(self) -> str:
-        return self.name
+        return f"{self.name}"
 
 
 @dataclass(frozen=True)

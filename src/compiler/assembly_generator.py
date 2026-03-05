@@ -142,8 +142,8 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                             case "and":
                                 emit(f"movq {refs[1]}, %rax")
                                 emit(f"andq {refs[0]}, %rax")
-                        # finally, move the contents of %rax to the given destination
-                        emit(f'movq %rax, {locals.get_ref(insn.dest)}')
+                    # finally, move the contents of %rax to the given destination
+                    emit(f'movq %rax, {locals.get_ref(insn.dest)}')
             case _:
                 raise Exception("Not implemented!")
 

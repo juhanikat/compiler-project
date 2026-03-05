@@ -1,12 +1,9 @@
-import dataclasses
-from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import List
 
 from compiler import my_ast, my_ir
-from compiler.interpreter import DEFAULT_LOCALS, SymTable, Value
-from compiler.my_types import Bool, Int, Unit
-from compiler.parser import parse
-from compiler.tokenizer import SourceLocation, tokenize
+from compiler.interpreter import DEFAULT_LOCALS, SymTable
+from compiler.my_types import Bool, Int
+from compiler.tokenizer import SourceLocation
 from compiler.typechecker import typecheck
 
 
@@ -17,6 +14,8 @@ def generate_ir(
     reserved_names: set[str] | None,
     root_expr: my_ast.Expression
 ) -> list[my_ir.Instruction]:
+    if isinstance(root_expr, my_ast.EmptyExpression):
+        return []
     if reserved_names is None:
         reserved_names = set(DEFAULT_LOCALS.copy().keys())
     # 'var_unit' is used when an expression's type is 'Unit'.
@@ -39,7 +38,7 @@ def generate_ir(
     # We collect the IR instructions that we generate
     # into this list.
     ins: list[my_ir.Instruction] = []
-
+    print(root_expr)
     # This function visits an AST node,
     # appends IR instructions to 'ins',
     # and returns the IR variable where
@@ -49,6 +48,7 @@ def generate_ir(
     # (which may be shadowed) to unique IR variables.
     # The symbol table will be updated in the same way as
     # in the interpreter and type checker.
+
     def visit(sym_table: SymTable[my_ir.IRVar], expr: my_ast.Expression) -> my_ir.IRVar:
         loc = expr.source_loc
         if not loc:
@@ -85,8 +85,10 @@ def generate_ir(
                 return ir_var
 
             case my_ast.Variable():
-                value_ir = visit(sym_table, expr.value)
-                sym_table.add(expr.name, value_ir)
+                temp_value_var = visit(sym_table, expr.value)
+                real_var = new_var()
+                ins.append(my_ir.Copy(temp_value_var, real_var))
+                sym_table.add(expr.name, real_var)
                 return var_unit
 
             case my_ast.UnaryOp():
@@ -107,7 +109,7 @@ def generate_ir(
                     var_left = visit(sym_table, expr.left)
                     var_right = visit(sym_table, expr.right)
                     ins.append(my_ir.Copy(var_right, var_left, loc=loc))
-                    return var_unit
+                    return var_left
 
                 var_left = visit(sym_table, expr.left)
                 # this might not work correctly
@@ -152,18 +154,22 @@ def generate_ir(
                 l_else = new_label(loc=loc)
                 l_end = new_label(loc=loc)
 
+                var_result = new_var()
+
                 var_cond = visit(sym_table, expr.if_expr)
                 ins.append(my_ir.CondJump(var_cond, l_then, l_else, loc=loc))
 
                 ins.append(l_then)
-                visit(sym_table, expr.then_expr)
+                then_result = visit(sym_table, expr.then_expr)
+                ins.append(my_ir.Copy(then_result, var_result))
                 ins.append(my_ir.Jump(l_end, loc=loc))
 
                 ins.append(l_else)
-                visit(sym_table, expr.else_expr)
+                else_result = visit(sym_table, expr.else_expr)
+                ins.append(my_ir.Copy(else_result, var_result))
 
                 ins.append(l_end)
-                return var_unit
+                return var_result
 
             case my_ast.TopLevel():
                 if len(expr.expressions) == 0:
@@ -227,11 +233,11 @@ def generate_ir(
 
     # Add IR code to print the result, based on the type assigned earlier
     # by the type checker.
+
     if root_expr.type == Int():
         ins.append(my_ir.Call(my_ir.IRVar("print_int"),
                    [var_final_result], new_var()))
     elif root_expr.type == Bool():
         ins.append(my_ir.Call(my_ir.IRVar("print_bool"),
                    [var_final_result], new_var()))
-    # print(root_sym_table.lookup("print_int"))
     return ins

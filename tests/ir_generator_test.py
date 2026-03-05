@@ -19,14 +19,16 @@ def test_basics() -> None:
          Call(IRVar(name='print_int'), [IRVar(name='v4')], IRVar(name='v5'))]
 
     assert generate_ir(None, parse(tokenize("var x = 1"))) == \
-        [LoadIntConst(1, IRVar("v0"))]
+        [LoadIntConst(1, IRVar("v0")),
+         Copy(IRVar("v0"), IRVar("v1"))]
 
     assert generate_ir(None, parse(tokenize("var x = 1; x = x + 2; x"))) == \
         [LoadIntConst(1, IRVar("v0")),
-         LoadIntConst(2, IRVar("v1")),
-         Call(IRVar("+"), [IRVar("v0"), IRVar("v1")], IRVar("v2")),
-         Copy(IRVar("v2"), IRVar("v0")),
-         Call(IRVar(name='print_int'), [IRVar(name='v0')], IRVar(name='v3'))]
+         Copy(IRVar("v0"), IRVar("v1")),
+         LoadIntConst(2, IRVar("v2")),
+         Call(IRVar("+"), [IRVar("v1"), IRVar("v2")], IRVar("v3")),
+         Copy(IRVar("v3"), IRVar("v1")),
+         Call(IRVar(name='print_int'), [IRVar(name='v1')], IRVar(name='v4'))]
 
     assert generate_ir(None, parse(tokenize("if true then 1"))) == \
         [LoadBoolConst(True, IRVar("v0")),
