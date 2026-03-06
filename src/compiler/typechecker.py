@@ -149,6 +149,9 @@ def typecheck(node: my_ast.Expression | None, type_table: TypeTable | None = Non
                 if not fun_type:
                     raise Exception(
                         f"'{node.name}' is not defined in TypeTable")
+                if not isinstance(fun_type, FunType):
+                    raise Exception(
+                        f"TypeTable has function {node.name}, but its value is not a FunType!")
 
                 for arg, proper_type, index in zip(node.args, fun_type.type_args, range(1, len(node.args) + 1), strict=True):
                     if not isinstance(typecheck(arg), proper_type.__class__):
