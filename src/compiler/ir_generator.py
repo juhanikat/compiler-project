@@ -38,7 +38,7 @@ def generate_ir(
     # We collect the IR instructions that we generate
     # into this list.
     ins: list[my_ir.Instruction] = []
-    print(root_expr)
+
     # This function visits an AST node,
     # appends IR instructions to 'ins',
     # and returns the IR variable where
@@ -102,6 +102,7 @@ def generate_ir(
                 return var_result
 
             case my_ast.BinaryOp():
+                print(expr)
                 if expr.op == "=":
                     if not isinstance(expr.left, my_ast.Identifier):
                         raise Exception(f"{expr.left} is not an identifier")
@@ -170,6 +171,21 @@ def generate_ir(
 
                 ins.append(l_end)
                 return var_result
+
+            case my_ast.WhileDo():
+                l_do = new_label(loc=loc)
+                l_end = new_label(loc=loc)
+
+                var_cond = visit(sym_table, expr.condition)
+                ins.append(my_ir.CondJump(var_cond, l_do, l_end))
+
+                ins.append(l_do)
+                visit(sym_table, expr.do_expr)
+                var_cond = visit(sym_table, expr.condition)
+                ins.append(my_ir.CondJump(var_cond, l_do, l_end))
+
+                ins.append(l_end)
+                return var_unit
 
             case my_ast.TopLevel():
                 if len(expr.expressions) == 0:

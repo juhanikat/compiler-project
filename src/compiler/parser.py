@@ -22,8 +22,8 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
         return my_ast.EmptyExpression()
 
     pos = 0
-    # saves the last consumed Token, used when parsing blocks and semicolons
-    last_consumed: Token | None = None
+    # saves the last consumed Token, used when parsing blocks and semicolons.
+    last_consumed: Token = Token("", TokenType.BEGIN, SourceLocation(-1, -1))
 
     def peek() -> Token:
         """Returns the next Token on the token list, or the last Token on the list with type=END if there are no more tokens."""
@@ -149,7 +149,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
             expressions.append(expression)
 
             if peek().text != ";":
-                if (last_consumed and last_consumed.text == "}") and peek().text != "}":
+                if (last_consumed.text == "}") and peek().text != "}":
                     # NOTE: might cause issues later??
                     continue
 
@@ -167,17 +167,23 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
         expressions.append(parse_expression(True))
         returns_last = True
 
-        while peek().text == ";":
-            consume(";")
-            returns_last = False
-            if peek().type != TokenType.END:
-                expressions.append(parse_expression(True))
-                if peek().type == TokenType.END:
-                    returns_last = True
+        while peek().text == ";" or last_consumed.text == "}":
+            if peek().text == ";":
+                consume(";")
+                if peek().type != TokenType.END:
+                    expressions.append(parse_expression(True))
+            elif last_consumed.text == "}":
+                if peek().text == ";" or peek().type == TokenType.END:
+                    break
+                else:
+                    expressions.append(parse_expression(True))
 
         if peek().type != TokenType.END:
             raise Exception(
                 f'{peek().source_loc}: invalid token "{peek().text}"')
+
+        if last_consumed.text == ";":
+            returns_last = False
 
         # if there is only a single expression that IS NOT FOLLOWED BY A SEMICOLON, only return the expression, else return a TopLevel
         if len(expressions) == 1 and returns_last:

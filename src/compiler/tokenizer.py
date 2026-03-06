@@ -9,6 +9,7 @@ class TokenType(Enum):
     OPERATOR = "operator"
     PUNCTUATION = "punctuation"
     OTHER = "other"
+    BEGIN = "begin"
     END = "end"
 
 

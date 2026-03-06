@@ -139,6 +139,9 @@ def typecheck(node: my_ast.Expression | None, type_table: TypeTable | None = Non
                 return t2  # or t3, they are the same type
 
             case my_ast.WhileDo():
+                if not isinstance(typecheck(node.condition, type_table), Bool):
+                    raise Exception(
+                        "The condition for the while loop does not result in a Bool")
                 return Unit()
 
             case my_ast.FunctionCall():
