@@ -145,14 +145,17 @@ def typecheck(node: my_ast.Expression | None, type_table: TypeTable | None = Non
                 return Unit()
 
             case my_ast.FunctionCall():
-                value = type_table.lookup(node.name)
-                if not value:
+                fun_type = type_table.lookup(node.name)
+                if not fun_type:
                     raise Exception(
-                        f"'{node.name}' does not exist in the TypeTable")
-                if not isinstance(value, FunType):
-                    raise Exception(
-                        f"TypeTable has function {node.name}, but its value is not a FunType!")
-                return value.return_type
+                        f"'{node.name}' is not defined in TypeTable")
+
+                for arg, proper_type, index in zip(node.args, fun_type.type_args, range(1, len(node.args) + 1), strict=True):
+                    if not isinstance(typecheck(arg), proper_type.__class__):
+                        raise Exception(
+                            f"Argument {index} for function '{node.name}' was not {proper_type}")
+
+                return fun_type.return_type
 
             case my_ast.Block():
                 block_type_table = TypeTable(locals=None, parent=type_table)
