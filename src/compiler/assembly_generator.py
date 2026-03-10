@@ -144,7 +144,7 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                             emit(f'movq %rax, {locals.get_ref(insn.dest)}')
                         case _:
                             # all other functions
-                            emit(f"callq *{locals.get_ref(insn.fun)}")
+                            emit(f"call {insn.fun.name}")
                             emit(f'movq %rax, {locals.get_ref(insn.dest)}')
 
             case _:

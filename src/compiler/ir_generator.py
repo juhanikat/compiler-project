@@ -22,14 +22,14 @@ def generate_ir(
     var_unit = my_ir.IRVar('unit')
 
     def new_var() -> my_ir.IRVar:
-        for i in range(100):
+        for i in range(1000):
             if f"v{i}" not in reserved_names:
                 reserved_names.add(f"v{i}")
                 return my_ir.IRVar(f"v{i}")
         raise Exception("Ran out of variables!")
 
     def new_label(loc: SourceLocation) -> my_ir.Label:
-        for i in range(100):
+        for i in range(1000):
             if f"L{i}" not in reserved_names:
                 reserved_names.add(f"L{i}")
                 return my_ir.Label(f"L{i}", loc=loc)
