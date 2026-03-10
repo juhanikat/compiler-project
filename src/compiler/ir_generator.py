@@ -106,6 +106,9 @@ def generate_ir(
 
                     var_left = visit(sym_table, expr.left)
                     var_right = visit(sym_table, expr.right)
+                    print("VARS")
+                    print(var_right)
+                    print(var_left)
                     ins.append(my_ir.Copy(var_right, var_left, loc=loc))
                     return var_left
 

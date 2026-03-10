@@ -123,9 +123,9 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                     intrinsics.all_intrinsics[insn.fun.name](args)
                     emit(f'movq %rax, {locals.get_ref(insn.dest)}')
                 else:
-                    for param, register in zip(insn.args, param_registers):
+                    for arg, register in zip(insn.args, param_registers):
                         # put arguments into registers
-                        emit(f'movq {locals.get_ref(param)}, {register}')
+                        emit(f'movq {locals.get_ref(arg)}, {register}')
 
                     # all normal functions
                     refs = []
@@ -135,21 +135,21 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                     print(locals.get_ref(insn.fun))
                     match insn.fun.name:
                         case "or":
-                            # %rax will contain the result
                             emit(f"movq {refs[1]}, %rax")
                             emit(f"orq {refs[0]}, %rax")
+                            emit(f'movq %rax, {locals.get_ref(insn.dest)}')
                         case "and":
                             emit(f"movq {refs[1]}, %rax")
                             emit(f"andq {refs[0]}, %rax")
+                            emit(f'movq %rax, {locals.get_ref(insn.dest)}')
                         case _:
+                            # all other functions
                             emit(f"callq *{locals.get_ref(insn.fun)}")
+                            emit(f'movq %rax, {locals.get_ref(insn.dest)}')
 
-                    # finally, move the contents of %rax to the given destination
-                    emit(f'movq %rax, {locals.get_ref(insn.dest)}')
             case _:
                 raise Exception("Not implemented!")
 
-    emit('movq $0, %rax')
     emit('movq %rbp, %rsp')
     emit('popq %rbp')
     emit('ret')
