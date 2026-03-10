@@ -11,7 +11,7 @@ left_associative_binary_operators: List[List[str]] = [
     ['<', '<=', '>', '>='],
     ['+', '-'],
     ['*', '/', '%'],
-    ['-', 'not'],
+    # ['-', 'not'],
     # all identifiers are in this spot
 ]
 
@@ -72,7 +72,7 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
 
     def parse_expression(allow_vars: bool = False) -> my_ast.Expression:
         level_index = 0
-        left = parse_term(0, allow_vars)
+        left = parse_term(0, allow_vars=allow_vars)
         for precedence_level in left_associative_binary_operators[level_index:]:
             while peek().text in precedence_level:
                 operator_token = consume()
@@ -88,11 +88,15 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
                 )
         return left
 
-    def parse_term(level_index: int, allow_vars: bool = False) -> my_ast.Expression:
-        left = parse_factor(allow_vars)
-        # NOTE: ????? it works
-        if left_associative_binary_operators[level_index] != ["="]:
-            level_index += 1
+    def parse_term(level_index: int, *, allow_vars: bool = False, no_assignment: bool = False) -> my_ast.Expression:
+        left = parse_factor(allow_vars=allow_vars)
+        if level_index == 0:
+            level_index = 1
+        # NOTE: ????? it
+        if peek().text == "=" and no_assignment == False:
+            operator = consume("=").text
+            right = parse_term(level_index, no_assignment=True)
+            return my_ast.BinaryOp(left, operator, right, source_loc=left.source_loc)
 
         for precedence_level in left_associative_binary_operators[level_index:]:
             while peek().text in precedence_level:
