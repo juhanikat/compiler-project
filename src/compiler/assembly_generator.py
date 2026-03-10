@@ -126,22 +126,24 @@ def generate_assembly(instructions: list[my_ir.Instruction]) -> str:
                     for param, register in zip(insn.args, param_registers):
                         # put arguments into registers
                         emit(f'movq {locals.get_ref(param)}, {register}')
-                    if insn.fun.name in ["print_int", "print_bool", "read_int"]:
-                        # special case for external functions
-                        emit(f"callq {insn.fun.name}")
-                    else:
-                        # all normal functions
-                        refs = []
-                        for arg in insn.args:
-                            refs.append(locals.get_ref(arg))
-                        match insn.fun.name:
-                            case "or":
-                                # %rax will contain the result
-                                emit(f"movq {refs[1]}, %rax")
-                                emit(f"orq {refs[0]}, %rax")
-                            case "and":
-                                emit(f"movq {refs[1]}, %rax")
-                                emit(f"andq {refs[0]}, %rax")
+
+                    # all normal functions
+                    refs = []
+                    for arg in insn.args:
+                        refs.append(locals.get_ref(arg))
+                    print(locals._var_to_location)
+                    print(locals.get_ref(insn.fun))
+                    match insn.fun.name:
+                        case "or":
+                            # %rax will contain the result
+                            emit(f"movq {refs[1]}, %rax")
+                            emit(f"orq {refs[0]}, %rax")
+                        case "and":
+                            emit(f"movq {refs[1]}, %rax")
+                            emit(f"andq {refs[0]}, %rax")
+                        case _:
+                            emit(f"callq *{locals.get_ref(insn.fun)}")
+
                     # finally, move the contents of %rax to the given destination
                     emit(f'movq %rax, {locals.get_ref(insn.dest)}')
             case _:

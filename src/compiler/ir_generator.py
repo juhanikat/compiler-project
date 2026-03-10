@@ -51,14 +51,12 @@ def generate_ir(
 
     def visit(sym_table: SymTable[my_ir.IRVar], expr: my_ast.Expression) -> my_ir.IRVar:
         loc = expr.source_loc
+        print(expr)
         if not loc:
             raise Exception("Missing SourceLocation")
 
         match expr:
             case my_ast.Literal():
-                # Create an IR variable to hold the value,
-                # and emit the correct instruction to
-                # load the constant value.
                 match expr.value:
                     case bool():
                         var = new_var()
@@ -74,8 +72,6 @@ def generate_ir(
                         raise Exception(
                             f"{loc}: unsupported literal: {type(expr.value)}")
 
-                # Return the variable that holds
-                # the loaded value.
                 return var
 
             case my_ast.Identifier():
@@ -86,6 +82,8 @@ def generate_ir(
 
             case my_ast.Variable():
                 temp_value_var = visit(sym_table, expr.value)
+                print("TEMP VALUE VAR")
+                print(temp_value_var)
                 real_var = new_var()
                 ins.append(my_ir.Copy(temp_value_var, real_var))
                 sym_table.add(expr.name, real_var)
@@ -102,7 +100,6 @@ def generate_ir(
                 return var_result
 
             case my_ast.BinaryOp():
-                print(expr)
                 if expr.op == "=":
                     if not isinstance(expr.left, my_ast.Identifier):
                         raise Exception(f"{expr.left} is not an identifier")
@@ -112,28 +109,41 @@ def generate_ir(
                     ins.append(my_ir.Copy(var_right, var_left, loc=loc))
                     return var_left
 
+                sc_or = new_label(loc=loc)
+                sc_and = new_label(loc=loc)
+                no_sc = new_label(loc=loc)
+                end = new_label(loc=loc)
+                var_result = new_var()
                 var_left = visit(sym_table, expr.left)
-                # this might not work correctly
-                if expr.op == "or" and isinstance(ins[-1], my_ir.LoadBoolConst) and ins[-1].value == True:
+
+                # short-circuit checks
+                if expr.op == "or":
+                    ins.append(my_ir.CondJump(var_left, sc_or, no_sc))
+                    ins.append(sc_or)
+                    ins.append(my_ir.LoadBoolConst(
+                        True, var_result, loc=loc))
+                    ins.append(my_ir.Jump(end, loc=loc))
+                    # jump here if no short-circuiting is done
+                    ins.append(no_sc)
+                elif expr.op == "and":
+                    ins.append(my_ir.CondJump(var_left, no_sc, sc_and))
+                    ins.append(sc_and)
                     var = new_var()
                     ins.append(my_ir.LoadBoolConst(
-                        True, var, loc=loc))
-                    return var
-                elif expr.op == "and" and isinstance(ins[-1], my_ir.LoadBoolConst) and ins[-1].value == False:
-                    var = new_var()
-                    ins.append(my_ir.LoadBoolConst(
-                        False, var, loc=loc))
-                    return var
+                        False, var_result, loc=loc))
+                    ins.append(my_ir.Jump(end, loc=loc))
+                    # jump here if no short-circuiting is done
+                    ins.append(no_sc)
 
                 var_op = sym_table.lookup(expr.op)
                 if not var_op:
                     raise Exception(f"{expr.op} not found in IR Table")
 
                 var_right = visit(sym_table, expr.right)
-                var_result = new_var()
-
                 ins.append(my_ir.Call(
                     var_op, [var_left, var_right], var_result, loc=loc))
+                if expr.op == "or" or expr.op == "and":
+                    ins.append(end)
                 return var_result
 
             case my_ast.IfThen():
@@ -223,32 +233,25 @@ def generate_ir(
 
                 visited_args = []
                 for arg in expr.args:
+                    print(arg)
                     visited_args.append(visit(sym_table, arg))
 
                 ins.append(my_ir.Call(func, visited_args, var_result))
                 return var_result
 
             case _:
-                print(expr)
-                raise Exception("Didn't match any ast!")
-
-    # We start with a SymTab that maps all available global names
-    # like 'print_int' to IR variables of the same name.
-    # In the Assembly generator stage, we will give
-    # actual implementations for these globals. For now,
-    # they just need to exist so the variable lookups work,
-    # and clashing variable names can be avoided.
+                raise Exception("Expression not implemented")
 
     root_sym_table = SymTable[my_ir.IRVar](locals={}, parent=None)
     for name in reserved_names:
         root_sym_table.add(name, my_ir.IRVar(name))
 
-    # Start visiting the AST from the root. NOTE: Also typecheck the root here.
+    # Start visiting the AST from the root.
+    # NOTE: Also typecheck the root here.
     typecheck(root_expr, None)
     var_final_result = visit(root_sym_table, root_expr)
 
-    # Add IR code to print the result, based on the type assigned earlier
-    # by the type checker.
+    # Finally, add a Call that prints the result of the last instruction in the code, if the result was an Int or a Bool
 
     if root_expr.type == Int():
         ins.append(my_ir.Call(my_ir.IRVar("print_int"),
