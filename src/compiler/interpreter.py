@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Generic, Iterable, Self, Tuple, TypeVar
+from typing import Any, Callable, Dict, Generic, Self, Tuple, TypeVar
 
 from compiler import my_ast
 from compiler.my_ast import Expression

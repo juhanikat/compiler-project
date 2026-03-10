@@ -4,20 +4,19 @@ from compiler import my_ast, my_types
 from compiler.tokenizer import SourceLocation, Token, TokenType
 
 left_associative_binary_operators: List[List[str]] = [
-    ["="],
     ['or'],
     ['and'],
     ['==', '!='],
     ['<', '<=', '>', '>='],
     ['+', '-'],
     ['*', '/', '%'],
-    # ['-', 'not'],
     # all identifiers are in this spot
+    # unary_-, unary_not and '=' are special cases
 ]
 
 
 def parse(tokens: list[Token]) -> my_ast.Expression:
-    """Returns an Expression parsed from a list of tokens, or None if if the list is empty."""
+    """Returns an Expression parsed from a list of tokens, or None if the list is empty."""
     if len(tokens) == 0:
         return my_ast.EmptyExpression()
 
@@ -74,9 +73,12 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
         level_index = 0
         left = parse_term(0, allow_vars=allow_vars)
         for precedence_level in left_associative_binary_operators[level_index:]:
+            if peek().text == "=":
+                operator = consume("=").text
+                right = parse_expression()
+                return my_ast.BinaryOp(left, operator, right, source_loc=left.source_loc)
             while peek().text in precedence_level:
-                operator_token = consume()
-                operator = operator_token.text
+                operator = consume().text
                 new_level_index = left_associative_binary_operators.index(
                     precedence_level)
                 right = parse_term(new_level_index)
@@ -88,20 +90,15 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
                 )
         return left
 
-    def parse_term(level_index: int, *, allow_vars: bool = False, no_assignment: bool = False) -> my_ast.Expression:
+    def parse_term(level_index: int, *, allow_vars: bool = False) -> my_ast.Expression:
         left = parse_factor(allow_vars=allow_vars)
-        if level_index == 0:
-            level_index = 1
-        # NOTE: ????? it
-        if peek().text == "=" and no_assignment == False:
-            operator = consume("=").text
-            right = parse_term(level_index, no_assignment=True)
-            return my_ast.BinaryOp(left, operator, right, source_loc=left.source_loc)
-
-        for precedence_level in left_associative_binary_operators[level_index:]:
+        for precedence_level in left_associative_binary_operators[level_index + 1:]:
+            if peek().text == "=":
+                operator = consume("=").text
+                right = parse_expression()
+                return my_ast.BinaryOp(left, operator, right, source_loc=left.source_loc)
             while peek().text in precedence_level:
-                operator_token = consume()
-                operator = operator_token.text
+                operator = consume().text
                 new_level_index = left_associative_binary_operators.index(
                     precedence_level)
                 right = parse_term(new_level_index)

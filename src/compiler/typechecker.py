@@ -3,7 +3,7 @@ from types import NoneType
 from typing import Dict, List, Self
 
 from compiler import my_ast
-from compiler.my_types import BasicType, Bool, FunType, Int, Type, Unit
+from compiler.my_types import Bool, FunType, Int, Type, Unit
 
 
 @dataclass(init=False)

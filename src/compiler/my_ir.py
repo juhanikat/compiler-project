@@ -1,12 +1,8 @@
 import dataclasses
 from dataclasses import dataclass, field
-from typing import Any, Dict
+from typing import Any
 
-from compiler import my_ast
-from compiler.interpreter import DEFAULT_LOCALS, SymTable, Value
-from compiler.my_types import Bool, Int, Type, Unit
-from compiler.parser import parse
-from compiler.tokenizer import SourceLocation, tokenize
+from compiler.tokenizer import SourceLocation
 
 
 @dataclass(frozen=True)
