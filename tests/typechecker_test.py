@@ -17,17 +17,12 @@ def test_binary_op() -> None:
     assert typecheck(parse(tokenize("1 + 2"))) == Int()
     assert typecheck(
         parse(tokenize("var a = 2; var b = a * a; a + b"))) == Int()
-    
+
     assert typecheck(
         parse(tokenize("1 + 1; 1"))) == Int()
 
     with pytest.raises(TypeError):
         typecheck(parse(tokenize("var a = 1; var b = true; a + b")))
-
-
-def test_functions() -> None:
-    # TODO: this
-    pass
 
 
 def test_others() -> None:

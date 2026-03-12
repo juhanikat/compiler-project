@@ -264,10 +264,6 @@ def parse(tokens: list[Token]) -> my_ast.Expression:
 
         consume("=")
         value = parse_expression()
-        if var_type == my_types.Int() and not (isinstance(value, my_ast.Literal) and type(value.value) is int) \
-                or var_type == my_types.Bool() and not (isinstance(value, my_ast.Literal) and isinstance(value.value, bool)):
-            # TODO: what about functions?
-            raise Exception("Variable types do not match")
 
         if var_type:
             return my_ast.Variable(name, value, type=var_type, source_loc=var_token.source_loc)

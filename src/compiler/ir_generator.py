@@ -1,6 +1,6 @@
 from typing import List
 
-from compiler import my_ast, my_ir
+from compiler import my_ast, my_ir, my_types
 from compiler.interpreter import DEFAULT_LOCALS, SymTable
 from compiler.my_types import Bool, Int
 from compiler.tokenizer import SourceLocation
@@ -8,9 +8,6 @@ from compiler.typechecker import typecheck
 
 
 def generate_ir(
-    # 'reserved_names' should contain all global names
-    # like 'print_int' and '+'. You can get them from
-    # the global symbol table of your interpreter or type checker.
     reserved_names: set[str] | None,
     root_expr: my_ast.Expression
 ) -> list[my_ir.Instruction]:
@@ -35,23 +32,10 @@ def generate_ir(
                 return my_ir.Label(f"L{i}", loc=loc)
         raise Exception("Ran out of labels!")
 
-    # We collect the IR instructions that we generate
-    # into this list.
     ins: list[my_ir.Instruction] = []
-
-    # This function visits an AST node,
-    # appends IR instructions to 'ins',
-    # and returns the IR variable where
-    # the emitted IR instructions put the result.
-    #
-    # It uses a symbol table to map local variables
-    # (which may be shadowed) to unique IR variables.
-    # The symbol table will be updated in the same way as
-    # in the interpreter and type checker.
 
     def visit(sym_table: SymTable[my_ir.IRVar], expr: my_ast.Expression) -> my_ir.IRVar:
         loc = expr.source_loc
-        print(expr)
         if not loc:
             raise Exception("Missing SourceLocation")
 
@@ -81,11 +65,13 @@ def generate_ir(
                 return ir_var
 
             case my_ast.Variable():
-                temp_value_var = visit(sym_table, expr.value)
-                print("TEMP VALUE VAR")
-                print(temp_value_var)
-                real_var = new_var()
-                ins.append(my_ir.Copy(temp_value_var, real_var))
+                if isinstance(expr.value, my_ast.Identifier) and not isinstance(expr.value.type, my_types.FunType):
+                    # if value is an Identifier for a non-function value, make a copy to avoid aliasing
+                    temp_var = visit(sym_table, expr.value)
+                    real_var = new_var()
+                    ins.append(my_ir.Copy(temp_var, real_var, loc=loc))
+                else:
+                    real_var = visit(sym_table, expr.value)
                 sym_table.add(expr.name, real_var)
                 return var_unit
 
@@ -106,10 +92,10 @@ def generate_ir(
 
                     var_left = visit(sym_table, expr.left)
                     var_right = visit(sym_table, expr.right)
-                    print("VARS")
-                    print(var_right)
-                    print(var_left)
                     ins.append(my_ir.Copy(var_right, var_left, loc=loc))
+                    if isinstance(expr.right.type, my_types.FunType):
+                        # if assigning a function to a variable, change the name in the table too to be able to call it properly
+                        sym_table.change(expr.left.name, var_right)
                     return var_left
 
                 sc_or = new_label(loc=loc)
@@ -236,7 +222,6 @@ def generate_ir(
 
                 visited_args = []
                 for arg in expr.args:
-                    print(arg)
                     visited_args.append(visit(sym_table, arg))
 
                 ins.append(my_ir.Call(func, visited_args, var_result))

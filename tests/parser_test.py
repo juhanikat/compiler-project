@@ -369,8 +369,6 @@ def test_typing() -> None:
                  Identifier("x"),
                  returns_last=True)
 
-    # TODO: test function typing?
-
     with pytest.raises(Exception):
         parse(tokenize("var x: ABC = true"))
     with pytest.raises(Exception):

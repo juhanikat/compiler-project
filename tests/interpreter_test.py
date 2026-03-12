@@ -74,12 +74,6 @@ def test_while_do() -> None:
     assert interpret(parse(tokenize("{ { 2 + 3; 2 + 4 } { 5 } }"))) == 5
 
 
-def test_functions() -> None:
-    # TODO this
-    pass
-    # variable scope tests too
-
-
 def test_built_in_funcs() -> None:
     assert interpret(parse(tokenize("print_int(3)"))) == None
     assert interpret(parse(tokenize("print_bool(true)"))) == None
